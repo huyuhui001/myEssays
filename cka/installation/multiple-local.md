@@ -1,78 +1,91 @@
-# Multiple Nodes Installation
+# 多节点虚拟机安装Kubernetes
 
-## Local VM setting
+## 摘要
 
-VMWare Setting.
+在本地Windows环境中，通过VMWare安装三台Ubuntu虚拟机。在Ubuntu虚拟机中安装基于Containerd的Kubernetes系统，并分别配置一个主节点Master和两个工作节点Worker。
 
-* VMnet1: host-only, subnet: 192.168.150.0/24
-* VMnet8: NAT, subnet: 11.0.1.0/24
+## 本地虚拟机设置
 
-Create guest machine with VMWare Player.
+VMWare 设置
 
-* 4 GB RAM
-* 1 CPUs with 2 Cores
-* Ubuntu Server 22.04
-* NAT
+* VMnet1: host-only模式, 网络subnet: 192.168.150.0/24
+* VMnet8: NAT模式, 网络subnet: 11.0.1.0/24
 
-!!! info
-    Kubernetes running on Containerd.
+通过VMWare创建客户虚拟机。
 
+* 内存：4 GB
+* CPU：1 CPUs with 2 Cores
+* 操作系统：Ubuntu Server 22.04
+* 网络：NAT
 
-## Ubuntu Post Installation
+提示：
 
-!!! info
-    Log onto each VM with the account created during Ubuntu installation, and perform below tasks on every VM. 
+当前练习中，Kubernetes是基于Containerd，不是Docker。
 
+## Ubuntu预配置
 
-Create user `vagrant` on all guests.
-```console
+注意：下面的任务，需要在每台虚拟机中执行一次。
+
+在所有虚拟机中创建用户`vagrant`。
+
+```bash
 sudo adduser vagrant
 sudo usermod -aG adm,sudo,syslog,cdrom,dip,plugdev,lxd,root vagrant
 sudo passwd vagrant
 ```
 
-Set password for `root` on all guests.
-```console
+在所有虚拟机中设置用户`root`的密码。
+
+```bash
 sudo passwd root
 ```
 
-Enable root ssh logon.
-```console
+修改ssh服务的配置文件。开放`root`用户通过ssh登录（默认是禁用的）。
+
+```bash
 sudo vi /etc/ssh/sshd_config
 ```
 
-Update parameter `PermitRootLogin` from `prohibit-password` to `yes`.
+把参数 `PermitRootLogin`的值从`prohibit-password` 改为`yes`。
+
 ```
 PermitRootLogin yes
 #PermitRootLogin prohibit-password
 ```
 
-Restart the sshd service.
-```console
+重新启动sshd服务。
+
+```bash
 sudo systemctl restart sshd
 ```
 
-Change host name, e.g., `ubu1`.
-```console
+更改主机名，这里是`ubu1`.
+
+```bash
 sudo hostnamectl set-hostname ubu1
 sudo hostnamectl set-hostname ubu1 --pretty
 ```
 
-Verify if the hostname is set to expected name, e.g., `ubu1`.
-```console
+验证主机名是否被正确修改了，比如改为`ubu1`。
+
+```bash
 cat /etc/machine-info
 ```
 
-Verify if the hostname is set to expected name, e.g., `ubu1`.
-```console
+验证主机名是否被正确修改了，比如改为`ubu1`。
+
+```bash
 cat /etc/hostname
 ```
 
-Verify if the hostname of `127.0.1.1` is set to expected name, e.g., `ubu1`. And add all nodes into the file `/etc/hosts`.
-```console
+验证主机IP地址`127.0.1.1` 已经配置给当前虚拟机，比如`ubu1`。同时，在所有虚拟机的 `/etc/hosts`文件中添加其他虚拟机的IP和主机对应信息。
+
+```bash
 sudo vi /etc/hosts
 ```
-Related setting looks like below.
+
+以当前练习为例，修改后的`/etc/hosts`文件类似如下内容。
+
 ```
 127.0.1.1 ubu1
 11.0.1.129 ubu1
@@ -82,11 +95,13 @@ Related setting looks like below.
 ```
 
 Create file `/etc/netplan/00-installer-config.yaml`.
+
 ```console
 sudo vi /etc/netplan/00-installer-config.yaml
 ```
 
 Update it with information below to set VM with fixed IP with actual IP address, e.g, `11.0.1.129`.
+
 ```
 network:
   ethernets:
@@ -104,6 +119,7 @@ network:
 ```
 
 Effect above change.
+
 ```console
 sudo netplan apply
 ```
@@ -111,24 +127,29 @@ sudo netplan apply
 !!! Attention
     The current ssh connection will be broken due to network setting change.
 
-
 Disable swap and firewall on all nodes.
+
 ```console
 sudo swapoff -a
 sudo ufw disable
 sudo ufw status verbose
 ```
+
 And comment the last line of swap setting in file `/etc/fstab`. Need *reboot* guest here.
+
 ```console
 sudo vi /etc/fstab
 ```
+
 Result likes below.
+
 ```
 /dev/disk/by-uuid/df370d2a-83e5-4895-8c7f-633f2545e3fe / ext4 defaults 0 1
 # /swap.img     none    swap    sw      0       0
 ```
 
 Setup timezone on all nodes
+
 ```console
 sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
@@ -139,11 +160,13 @@ source /etc/profile
 ```
 
 Something like this after execute command `ll /etc/localtime`
+
 ```
 lrwxrwxrwx 1 root root 33 Jul 15 22:00 /etc/localtime -> /usr/share/zoneinfo/Asia/Shanghai
 ```
 
 Kernel setting.
+
 ```console
 cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
 overlay
@@ -152,12 +175,14 @@ EOF
 ```
 
 Load to kernel.
+
 ```console
 sudo modprobe overlay
 sudo modprobe br_netfilter
 ```
 
 Network setting.
+
 ```console
 cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
 net.bridge.bridge-nf-call-iptables  = 1
@@ -167,13 +192,13 @@ EOF
 ```
 
 Effect changes above.
+
 ```console
 sudo sysctl --system
 ```
 
 !!! Attention
     Reboot the VM.
-
 
 !!! Attention
     Log onto the VM with account `vagrant` to verify if above changes were updated as expected.
@@ -203,22 +228,24 @@ sudo sysctl --system
     sudo sysctl -a | grep -i net.ipv4.ip_forward
     ```
 
-
 ## Install Containerd
 
 Install Containerd sevice on all nodes.
 
 Backup source file.
+
 ```console
 sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
 ```
 
 Install Containered.
+
 ```console
 sudo apt-get update && sudo apt-get install -y containerd
 ```
 
 Configure Containerd. Modify file `/etc/containerd/config.toml`.
+
 ```console
 sudo mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
@@ -227,13 +254,14 @@ sudo vi /etc/containerd/config.toml
 
 Update `sandbox_image` with new value `"registry.aliyuncs.com/google_containers/pause:3.6"`.
 Update `SystemdCgroup ` with new value `true`.
+
 ```
 [plugins]
   [plugins."io.containerd.gc.v1.scheduler"]
 
   [plugins."io.containerd.grpc.v1.cri"]
     sandbox_image = "registry.aliyuncs.com/google_containers/pause:3.6"
-    
+
     [plugins."io.containerd.grpc.v1.cri".cni]
     [plugins."io.containerd.grpc.v1.cri".containerd]
       [plugins."io.containerd.grpc.v1.cri".containerd.default_runtime]
@@ -246,12 +274,12 @@ Update `SystemdCgroup ` with new value `true`.
 ```
 
 Restart Containerd service.
+
 ```console
 sudo systemctl restart containerd
 sudo systemctl status containerd
 ```
 
-  
 ## Install nerdctl
 
 Install nerdctl sevice on all nodes.
@@ -267,36 +295,41 @@ sudo cp nerdctl /usr/bin/
 ```
 
 Verify nerdctl.
+
 ```console
 sudo nerdctl --help
 ```
 
 To list local Kubernetes containers.
+
 ```console
 sudo nerdctl -n k8s.io ps
 ```
-
-
 
 ## Install Kubernetes
 
 Install Kubernetes on all nodes.
 
 Install dependencied packages.
+
 ```console
 sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl
 ```
 
 Install gpg certificate.
+
 ```console
 sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg
 ```
+
 Add Kubernetes repo. 
+
 ```console
 echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 ```
 
 Update and install dependencied packages.
+
 ```console
 sudo apt-get update
 sudo apt-get install ebtables
@@ -305,15 +338,16 @@ sudo apt-get upgrade iptables
 ```
 
 Check available versions of kubeadm.
+
 ```console
 apt policy kubeadm
 ```
 
 Install `1.24.1-00` version.
+
 ```console
 sudo apt-get -y install kubelet=1.24.1-00 kubeadm=1.24.1-00 kubectl=1.24.1-00 --allow-downgrades
 ```
-
 
 ## Setup Master Node
 
@@ -322,10 +356,13 @@ sudo apt-get -y install kubelet=1.24.1-00 kubeadm=1.24.1-00 kubectl=1.24.1-00 --
 Set up Control Plane on VM playing master node.
 
 Check kubeadm default parameters for initialization.
+
 ```console
 kubeadm config print init-defaults
 ```
+
 Reuslt:
+
 ```
 apiVersion: kubeadm.k8s.io/v1beta3
 bootstrapTokens:
@@ -370,12 +407,12 @@ Dry rune and run. Save the output, which will be used later on work nodes.
 With `kubeadm init` to initiate cluster, we need understand below three options about network.
 
 * `--pod-network-cidr`: 
-    * Specify range of IP addresses for the pod network. If set, the control plane will automatically allocate CIDRs for every node.
-    * Be noted that `10.244.0.0/16` is default range of flannel. If it's changed here, please do change the same when deploy `Flannel`.
+  * Specify range of IP addresses for the pod network. If set, the control plane will automatically allocate CIDRs for every node.
+  * Be noted that `10.244.0.0/16` is default range of flannel. If it's changed here, please do change the same when deploy `Flannel`.
 * `--apiserver-bind-port`: 
-    * Port for the API Server to bind to. (default 6443)
+  * Port for the API Server to bind to. (default 6443)
 * `--service-cidr`: 
-    * Use alternative range of IP address for service VIPs. (default "10.96.0.0/12")
+  * Use alternative range of IP address for service VIPs. (default "10.96.0.0/12")
 
 Note: 
 
@@ -386,12 +423,12 @@ There are 4 distinct networking problems to address:
 
 * Highly-coupled container-to-container communications: this is solved by Pods (podCIDR) and localhost communications.
 * Pod-to-Pod communications: 
-    * a.k.a. container-to-container. 
-    * Example with Flannel, the flow is: Pod --> veth pair --> cni0 --> flannel.1 --> host eth0 --> host eth0 --> flannel.1 --> cni0 --> veth pair --> Pod.
+  * a.k.a. container-to-container. 
+  * Example with Flannel, the flow is: Pod --> veth pair --> cni0 --> flannel.1 --> host eth0 --> host eth0 --> flannel.1 --> cni0 --> veth pair --> Pod.
 * Pod-to-Service communications:
-    * Flow: Pod --> Kernel --> Servive iptables --> service --> Pod iptables --> Pod
+  * Flow: Pod --> Kernel --> Servive iptables --> service --> Pod iptables --> Pod
 * External-to-Service communications: 
-    * LoadBalancer: SLB --> NodePort --> Service --> Pod
+  * LoadBalancer: SLB --> NodePort --> Service --> Pod
 
 `kube-proxy` is responsible for iptables, not traffic. 
 
@@ -410,10 +447,10 @@ sudo kubeadm init \
   --kubernetes-version=v1.24.1
 ```
 
-
 ### kubeconfig file
 
 Set `kubeconfig` file for current user (here it's `vagrant`).
+
 ```console
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
@@ -431,6 +468,7 @@ We can specify other kubeconfig files by setting the `KUBECONFIG` environment va
 A *context* element in a kubeconfig file is used to group access parameters under a convenient name. Each context has three parameters: cluster, namespace, and user. By default, the kubectl command-line tool uses parameters from the current context to communicate with the cluster.
 
 A sample of `.kube/config`.
+
 ```
 apiVersion: v1
 clusters:
@@ -455,16 +493,17 @@ users:
 ```
 
 To get the current context:
+
 ```console
 kubectl config get-contexts
 ```
+
 Result
+
 ```
 CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPACE
 *         kubernetes-admin@kubernetes   kubernetes   kubernetes-admin   
 ```
-
-
 
 ## Install Calico
 
@@ -472,11 +511,14 @@ Here is guidance of [End-to-end Calico installation](https://projectcalico.docs.
 Detail practice demo, can be found in section "Install Calico" of "A1.Discussion" below. 
 
 Install Calico
+
 ```console
 curl https://docs.projectcalico.org/manifests/calico.yaml -O
 kubectl apply -f calico.yaml
 ```
+
 Result
+
 ```
 configmap/calico-config created
 customresourcedefinition.apiextensions.k8s.io/bgpconfigurations.crd.projectcalico.org created
@@ -507,12 +549,14 @@ serviceaccount/calico-kube-controllers created
 poddisruptionbudget.policy/calico-kube-controllers created
 ```
 
-
 Verify status of Calico. It may take minutes to complete initialization.
+
 ```console
 kubectl get pod -n kube-system | grep calico
 ```
+
 Result
+
 ```
 calico-kube-controllers-555bc4b957-l8bn2   0/1     Pending    0          28s
 calico-node-255pc                          0/1     Init:1/3   0          29s
@@ -521,10 +565,13 @@ calico-node-w8nvl                          0/1     Init:1/3   0          29s
 ```
 
 Verify network status.
+
 ```console
 sudo nerdctl network ls
 ```
+
 Result
+
 ```
 NETWORK ID      NAME               FILE
                 k8s-pod-network    /etc/cni/net.d/10-calico.conflist
@@ -533,22 +580,22 @@ NETWORK ID      NAME               FILE
                 none 
 ```
 
-
-
-
 ## Setup Work Nodes
 
 Use `kubeadm token` to generate the join token and hash value.
+
 ```console
 kubeadm token create --print-join-command
 ```
 
 Command usage:
+
 ```console
 sudo kubeadm join <your master node eth0 ip>:6443 --token <token generated by kubeadm init> --discovery-token-ca-cert-hash <hash key generated by kubeadm init>
 ```
 
 Result looks like below.
+
 ```
 [preflight] Running pre-flight checks
         [WARNING SystemVerification]: missing optional cgroups: blkio
@@ -566,16 +613,16 @@ This node has joined the cluster:
 Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
 ```
 
-
-
-
 ## Check Cluster Status
 
 Cluster info:
+
 ```console
 kubectl cluster-info
 ```
+
 Output
+
 ```
 Kubernetes control plane is running at https://11.0.1.129:6443
 CoreDNS is running at https://11.0.1.129:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
@@ -583,16 +630,16 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 ```
 
 Node info:
+
 ```
 kubectl get nodes -owide
 ```
 
 Pod info:
+
 ```
 kubectl get pod -A
 ```
-
-
 
 ## Post Installation
 
@@ -601,6 +648,7 @@ kubectl get pod -A
 On each node.
 
 Set `kubectl` [auto-completion](https://github.com/scop/bash-completion) following the [guideline](https://kubernetes.io/docs/tasks/tools/included/optional-kubectl-configs-bash-linux/).
+
 ```
 apt install -y bash-completion
 
@@ -614,6 +662,7 @@ source ~/.bashrc
 ### Alias
 
 If we set an alias for kubectl, we can extend shell completion to work with that alias:
+
 ```
 echo 'alias k=kubectl' >>~/.bashrc
 echo 'complete -o default -F __start_kubectl k' >>~/.bashrc
@@ -622,6 +671,7 @@ echo 'complete -o default -F __start_kubectl k' >>~/.bashrc
 ### Update Default Context
 
 Get current context.
+
 ```console
 kubectl config get-contexts 
 ```
@@ -639,6 +689,7 @@ CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPAC
 ```
 
 To set a context with new update, e.g, update default namespace, etc.. 
+
 ```console
 # Usage:
 kubectl config set-context <context name> --cluster=<cluster name> --namespace=<namespace name> --user=<user name> 
@@ -648,9 +699,11 @@ kubectl config set-context kubernetes-admin@kubernetes --cluster=kubernetes --na
 ```
 
 To switch to a new context.
+
 ```console
 kubectl config use-context <context name>
 ```
+
 ```console
 kubectl config use-context kubernetes-admin@kubernetes
 ```
@@ -659,8 +712,6 @@ kubectl config use-context kubernetes-admin@kubernetes
     * [kubectl](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
     * [commandline](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands)
 
-
-
 ## Install Helm
 
 Helm is the Kubernetes package manager. It doesn't come with Kubernetes. 
@@ -668,14 +719,13 @@ Helm is the Kubernetes package manager. It doesn't come with Kubernetes.
 Three concepts of helm:
 
 * A *Chart* is a Helm package. 
-    * It contains all of the resource definitions necessary to run an application, tool, or service inside of a Kubernetes cluster. 
-    * Think of it like the Kubernetes equivalent of a Homebrew formula, an Apt dpkg, or a Yum RPM file.
+  * It contains all of the resource definitions necessary to run an application, tool, or service inside of a Kubernetes cluster. 
+  * Think of it like the Kubernetes equivalent of a Homebrew formula, an Apt dpkg, or a Yum RPM file.
 * A *Repository* is the place where charts can be collected and shared. 
-    * It's like Perl's CPAN archive or the Fedora Package Database, but for Kubernetes packages.
+  * It's like Perl's CPAN archive or the Fedora Package Database, but for Kubernetes packages.
 * A *Release* is an instance of a chart running in a Kubernetes cluster. 
-    * One chart can often be installed many times into the same cluster. And each time it is installed, a new release is created. 
-    * Consider a MySQL chart. If you want two databases running in your cluster, you can install that chart twice. Each one will have its own release, which will in turn have its own release name.
-
+  * One chart can often be installed many times into the same cluster. And each time it is installed, a new release is created. 
+  * Consider a MySQL chart. If you want two databases running in your cluster, you can install that chart twice. Each one will have its own release, which will in turn have its own release name.
 
 Reference:
 
@@ -683,14 +733,16 @@ Reference:
 * [binary release](https://github.com/helm/helm/releases)
 * [source code](https://github.com/helm/helm).
 
-
 Helm Client Installation: 
+
 ```console
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
 chmod 700 get_helm.sh
 ./get_helm.sh
 ```
+
 Output:
+
 ```
 Downloading https://get.helm.sh/helm-v3.9.1-linux-amd64.tar.gz
 Verifying checksum... Done.
@@ -704,33 +756,28 @@ helm installed into /usr/local/bin/helm
         * `helm search hub` searches the [Artifact Hub](https://artifacthub.io/), which lists helm charts from dozens of different repositories.
         * `helm search repo` searches the repositories that you have added to your local helm client (with helm repo add). This search is done over local data, and no public network connection is needed.
 
-
 !!! Reference
     [Helming development](../foundamentals/helming.md)
-
-
-
-
-
-
 
 ## Reset cluster
 
 !!! Caution
     Below steps will destroy current cluster. 
 
-
 Delete all nodes in the cluster.
+
 ```console
 kubeadm reset
 ```
 
 Clean up rule of `iptables`.
+
 ```console
 iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
 ```
 
 Clean up rule of `IPVS` if using `IPVS`.
+
 ```console
 ipvsadm --clear
 ```

@@ -4,16 +4,14 @@
 
 在本地Windows环境中，通过VMWare安装Ubuntu虚拟机。在Ubuntu虚拟机中安装基于Docker的Kubernetes系统。在该虚拟机中同时配置主节点Master和工作节点Worker。
 
-
-
 ## 本地虚拟机设置
 
 VMWare虚拟机设置。
 
-* VMnet1: host-only, subnet: 192.168.150.0/24
-* VMnet8: NAT, subnet: 11.0.1.0/24
+* VMnet1: host-only模式, 网络subnet: 192.168.150.0/24
+* VMnet8: NAT模式, 网络subnet: 11.0.1.0/24
 
-通过VMWare Player创建客户机。
+通过VMWare创建客户机。
 
 * 内存：4 GB
 * CPU：2 CPUs with 2 Cores
@@ -52,7 +50,7 @@ cat /etc/machine-info
 cat /etc/hostname
 ```
 
-验证主机IP地址`127.0.1.1` 已经配置给当前客户机`ubusvr`。
+验证主机IP地址`127.0.1.1` 已经配置给当前虚拟机`ubusvr`。
 
 ```bash
 cat /etc/hosts
