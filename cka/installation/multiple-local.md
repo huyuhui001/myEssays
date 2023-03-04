@@ -24,9 +24,9 @@ VMWare 设置
 
 ## Ubuntu预配置
 
-注意：下面的任务，需要在每台虚拟机中执行一次。
+注意：下面的任务，需要在每台虚拟机中执行一次。以下简称虚拟机为节点。
 
-在所有虚拟机中创建用户`vagrant`。
+在所有节点中创建用户`vagrant`。
 
 ```bash
 sudo adduser vagrant
@@ -34,7 +34,7 @@ sudo usermod -aG adm,sudo,syslog,cdrom,dip,plugdev,lxd,root vagrant
 sudo passwd vagrant
 ```
 
-在所有虚拟机中设置用户`root`的密码。
+在所有节点中设置用户`root`的密码。
 
 ```bash
 sudo passwd root
@@ -78,7 +78,7 @@ cat /etc/machine-info
 cat /etc/hostname
 ```
 
-验证主机IP地址`127.0.1.1` 已经配置给当前虚拟机，比如`ubu1`。同时，在所有虚拟机的 `/etc/hosts`文件中添加其他虚拟机的IP和主机对应信息。
+验证主机IP地址`127.0.1.1` 已经配置给当前节点，比如`ubu1`。同时，在所有节点的 `/etc/hosts`文件中添加其他节点的IP和主机对应信息。
 
 ```bash
 sudo vi /etc/hosts
@@ -94,15 +94,15 @@ sudo vi /etc/hosts
 11.0.1.132 ubu4
 ```
 
-Create file `/etc/netplan/00-installer-config.yaml`.
+创建文件`/etc/netplan/00-installer-config.yaml`。
 
-```console
+```bash
 sudo vi /etc/netplan/00-installer-config.yaml
 ```
 
-Update it with information below to set VM with fixed IP with actual IP address, e.g, `11.0.1.129`.
+更新此文件，设定当前节点使用固定IP地址，比如，`11.0.1.129`。
 
-```
+```yaml
 network:
   ethernets:
     ens33:
@@ -118,39 +118,36 @@ network:
   version: 2
 ```
 
-Effect above change.
+执行下面命令时，使上述改动生效。注意，当前ssh连接会因此而断开。
 
-```console
+```bash
 sudo netplan apply
 ```
 
-!!! Attention
-    The current ssh connection will be broken due to network setting change.
+在所有节点禁用交换分区swap和防火墙firewall。
 
-Disable swap and firewall on all nodes.
-
-```console
+```bash
 sudo swapoff -a
 sudo ufw disable
 sudo ufw status verbose
 ```
 
-And comment the last line of swap setting in file `/etc/fstab`. Need *reboot* guest here.
+在所有节点的文件 `/etc/fstab`中注释掉涉及swap的那一行，修改后需要重启当前节点。
 
-```console
+```bash
 sudo vi /etc/fstab
 ```
 
-Result likes below.
+修改后的结果类似如下。
 
 ```
 /dev/disk/by-uuid/df370d2a-83e5-4895-8c7f-633f2545e3fe / ext4 defaults 0 1
 # /swap.img     none    swap    sw      0       0
 ```
 
-Setup timezone on all nodes
+在所有节点设置统一的时区。
 
-```console
+```bash
 sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 sudo cp /etc/profile /etc/profile.bak
@@ -159,31 +156,31 @@ echo 'LANG="en_US.UTF-8"' | sudo tee -a /etc/profile
 source /etc/profile
 ```
 
-Something like this after execute command `ll /etc/localtime`
+执行命令 `ll /etc/localtime`来验证时区是否修改正确。
 
 ```
 lrwxrwxrwx 1 root root 33 Jul 15 22:00 /etc/localtime -> /usr/share/zoneinfo/Asia/Shanghai
 ```
 
-Kernel setting.
+在所有节点修改内核设置。
 
-```console
+```bash
 cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
 overlay
 br_netfilter
 EOF
 ```
 
-Load to kernel.
+手动将需要的这2个模块载入内核。
 
-```console
+```bash
 sudo modprobe overlay
 sudo modprobe br_netfilter
 ```
 
-Network setting.
+在所有节点修改网络设置。
 
-```console
+```bash
 cat <<EOF | sudo tee /etc/sysctl.d/99-kubernetes-cri.conf
 net.bridge.bridge-nf-call-iptables  = 1
 net.ipv4.ip_forward                 = 1
@@ -191,69 +188,76 @@ net.bridge.bridge-nf-call-ip6tables = 1
 EOF
 ```
 
-Effect changes above.
+生效上述修改。
 
-```console
+```bash
 sudo sysctl --system
 ```
 
-!!! Attention
-    Reboot the VM.
+注意：
 
-!!! Attention
-    Log onto the VM with account `vagrant` to verify if above changes were updated as expected.
+重启当前节点，节点重启后，用账号`vagrant` 做如下验证，确保上述修改已生效。
 
-    * IP address.
-    ```console
+* IP地址。
+  
+  ```bash
     ip addr list
-    ```
-    * Hostname.
-    ```console
-    cat /etc/machine-info
-    cat /etc/hostname
-    hostname
-    ```
-    * Firewall.
-    ```console
-    sudo ufw status verbose
-    ```
-    * Kernel setting.
-    ```console
-    lsmod | grep -i overlay
-    lsmod | grep -i br_netfilter
-    ```
-    * Network setting.
-    ```console
-    sudo sysctl -a | grep -i net.bridge.bridge-nf-call-ip*
-    sudo sysctl -a | grep -i net.ipv4.ip_forward
-    ```
+  ```
 
-## Install Containerd
+* 主机名。
+  
+  ```bash
+  cat /etc/machine-info
+  cat /etc/hostname
+  hostname
+  ```
 
-Install Containerd sevice on all nodes.
+* 防火墙。
+  
+  ```bash
+  sudo ufw status verbose
+  ```
 
-Backup source file.
+* 内核。
+  
+  ```bash
+  lsmod | grep -i overlay
+  lsmod | grep -i br_netfilter
+  ```
 
-```console
+* 网络。
+  
+  ```bash
+  sudo sysctl -a | grep -i net.bridge.bridge-nf-call-ip*
+  sudo sysctl -a | grep -i net.ipv4.ip_forward
+  ```
+
+## 安装Containerd
+
+在所有节点上安装Containerd服务。
+
+备份Ubuntu安装源的原文件。
+
+```bash
 sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
 ```
 
-Install Containered.
+安装Containered。
 
-```console
+```bash
 sudo apt-get update && sudo apt-get install -y containerd
 ```
 
-Configure Containerd. Modify file `/etc/containerd/config.toml`.
+修改文件`/etc/containerd/config.toml`来配置Contanerd服务，如果没有，就创建这个文件。
 
-```console
+```bash
 sudo mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
 sudo vi /etc/containerd/config.toml
 ```
 
-Update `sandbox_image` with new value `"registry.aliyuncs.com/google_containers/pause:3.6"`.
-Update `SystemdCgroup ` with new value `true`.
+更新`sandbox_image`的值为`"registry.aliyuncs.com/google_containers/pause:3.6"`，以使用国内阿里云的源。
+更新`SystemdCgroup ` 的值为 `true`，以使用Cgroup。
 
 ```
 [plugins]
@@ -273,97 +277,92 @@ Update `SystemdCgroup ` with new value `true`.
             SystemdCgroup = true
 ```
 
-Restart Containerd service.
+重启Containerd 服务。
 
-```console
+```bash
 sudo systemctl restart containerd
 sudo systemctl status containerd
 ```
 
-## Install nerdctl
+## 安装nerdctl
 
-Install nerdctl sevice on all nodes.
+在所有节点上安装nerdctl服务。
 
-The goal of [`nerdctl`](https://github.com/containerd/nerdctl) is to facilitate experimenting the cutting-edge features of containerd that are not present in Docker.
+[`nerdctl`](https://github.com/containerd/nerdctl) 服务支持Contanerd所提供的容器化特性，特别是一些Docker不具备的新特性。
 
-Binaries are available here: https://github.com/containerd/nerdctl/releases
+二进制安装包可以通过这个链接取得: https://github.com/containerd/nerdctl/releases 。
 
-```console
+```bash
 wget https://github.com/containerd/nerdctl/releases/download/v0.22.2/nerdctl-0.22.2-linux-amd64.tar.gz
 tar -zxvf nerdctl-0.22.2-linux-amd64.tar.gz
 sudo cp nerdctl /usr/bin/
 ```
 
-Verify nerdctl.
+验证`nerdctl`服务。
 
-```console
+```bash
 sudo nerdctl --help
 ```
 
-To list local Kubernetes containers.
+列出初始安装Kubernetes时的容器container列表。
 
-```console
+```bash
 sudo nerdctl -n k8s.io ps
 ```
 
-## Install Kubernetes
+## 安装Kubernetes
 
-Install Kubernetes on all nodes.
+在所有节点上安装Kubernetes。
 
-Install dependencied packages.
+安装和升级Ubuntu系统依赖包。
 
-```console
+```bash
 sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl
-```
-
-Install gpg certificate.
-
-```console
-sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg
-```
-
-Add Kubernetes repo. 
-
-```console
-echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-```
-
-Update and install dependencied packages.
-
-```console
 sudo apt-get update
 sudo apt-get install ebtables
 sudo apt-get install libxtables12
 sudo apt-get upgrade iptables
 ```
 
-Check available versions of kubeadm.
+安装gpg证书。
 
-```console
+```bash
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg
+```
+
+添加Kubernetes安装源。 
+
+```bash
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+```
+
+坚持当前`kubeadm`的版本。
+
+```bash
 apt policy kubeadm
 ```
 
-Install `1.24.1-00` version.
+安装`1.24.1-00` 版本的`kubeadm`.
 
-```console
+```bash
 sudo apt-get -y install kubelet=1.24.1-00 kubeadm=1.24.1-00 kubectl=1.24.1-00 --allow-downgrades
 ```
 
-## Setup Master Node
+## 配置主节点
 
 ### kubeadm init
 
-Set up Control Plane on VM playing master node.
+在承担主节点的虚拟机里配置控制平面（Control Plane）。
 
-Check kubeadm default parameters for initialization.
+检查`kubeadm `当前默认配置参数。
 
-```console
+```bash
 kubeadm config print init-defaults
 ```
 
-Reuslt:
+类似结果如下。保存默认配置的结果，后续会作为参考。
 
-```
+```yaml
 apiVersion: kubeadm.k8s.io/v1beta3
 bootstrapTokens:
 - groups:
@@ -402,37 +401,45 @@ networking:
 scheduler: {}
 ```
 
-Dry rune and run. Save the output, which will be used later on work nodes.
+模拟安装和正式安装。 
 
-With `kubeadm init` to initiate cluster, we need understand below three options about network.
+
+
+通过命令 `kubeadm init` 进行主节点的初始化，下面是这个命令主要参数的说明，特别是网络参数的三个选择。
 
 * `--pod-network-cidr`: 
-  * Specify range of IP addresses for the pod network. If set, the control plane will automatically allocate CIDRs for every node.
-  * Be noted that `10.244.0.0/16` is default range of flannel. If it's changed here, please do change the same when deploy `Flannel`.
+  * 指定pod使用的IP地址范围。如果指定了该参数，则Control Plane会自动讲指定的CIDR分配给每个节点。
+  * IP地址段 `10.244.0.0/16` 是Flannel网络组件默认的地址范围。如果需要修改Flannel的IP地址段，需要在这里指定，且在部署Flannel时也要保持一致的IP段。
 * `--apiserver-bind-port`: 
-  * Port for the API Server to bind to. (default 6443)
+  * API服务（API Server）的端口，默认时6443。
 * `--service-cidr`: 
-  * Use alternative range of IP address for service VIPs. (default "10.96.0.0/12")
+  * 指定服务（service）的IP地址段，默认是`10.96.0.0/12`。
 
-Note: 
+提示： 
 
-* service VIPs (a.k.a. Cluster IP), specified by option `--service-cidr`.
-* podCIDR (a.k.a. endpoint IP)，specified by option `--pod-network-cidr`.
+* 服务VIPs（service VIPs），也称作集群IP（Cluster IP），通过参数 `--service-cidr`指定。
+* podCIDR，也称为endpoint IP，通过参数 `--pod-network-cidr`指定。
 
-There are 4 distinct networking problems to address:
+有4种典型的网络问题：
 
-* Highly-coupled container-to-container communications: this is solved by Pods (podCIDR) and localhost communications.
-* Pod-to-Pod communications: 
-  * a.k.a. container-to-container. 
-  * Example with Flannel, the flow is: Pod --> veth pair --> cni0 --> flannel.1 --> host eth0 --> host eth0 --> flannel.1 --> cni0 --> veth pair --> Pod.
-* Pod-to-Service communications:
-  * Flow: Pod --> Kernel --> Servive iptables --> service --> Pod iptables --> Pod
-* External-to-Service communications: 
-  * LoadBalancer: SLB --> NodePort --> Service --> Pod
+* 高度耦合的容器与容器之间的通信：这可以通过Pod（podCIDR）和本地主机通信来解决。
+* Pod对Pod通信（Pod-to-Pod）： 
+  * 也被称为容器对容器通信（container-to-container）。
+  * 在Flannel网络插件中的示例流程是：Pod --> veth对 --> cni0 --> flannel.1 --> 宿主机eth0 --> 宿主机eth0 --> flannel.1 --> cni0 --> veth对 --> Pod。
+* Pod对Service通信（Pod-to-Service）：
+  * 流程: Pod --> 内核 --> Service iptables --> Service --> Pod iptables --> Pod。
+* 外部对Service通信（External-to-Service）： 
+  * 负载均衡器: SLB --> NodePort --> Service --> Pod。
 
-`kube-proxy` is responsible for iptables, not traffic. 
+`kube-proxy` 是对iptables负责，不是网络流量（traffic）。 
 
-```console
+- `kube-proxy`是Kubernetes集群中的一个组件，负责为Service提供代理服务，同时也是Kubernetes网络模型中的重要组成部分之一。`kube-proxy`会在每个节点上启动一个代理进程，通过监听Kubernetes API Server的Service和Endpoint的变化来维护一个本地的Service和Endpoint的缓存。当有请求到达某个Service时，`kube-proxy`会根据该Service的类型（ClusterIP、NodePort、LoadBalancer、ExternalName）和端口号，生成相应的iptables规则，将请求转发给Service所代理的后端Pod。
+
+- iptables是Linux系统中的一个重要网络工具，可以设置IP包的过滤、转发和修改规则，可以实现网络层的防火墙、NAT等功能。在Kubernetes集群中，`kube-proxy`通过生成和更新iptables规则，来实现Service和Endpoint之间的转发和代理。具体来说，kube-proxy会为每个Service创建三条iptables规则链（nat表中的KUBE-SERVICES和KUBE-NODEPORTS链，以及filter表中的KUBE-SVC-XXXXX链），通过这些规则链，将请求转发到相应的Pod或者Service上。
+
+- 因此，`kube-proxy`和iptables是紧密相关的两个组件，通过iptables规则来实现Service和Pod之间的转发和代理。这种实现方式具有可扩展性和高可用性，同时也提供了一种灵活的网络模型，可以方便地实现服务发现、负载均衡等功能。
+
+```bash
 sudo kubeadm init \
   --dry-run \
   --pod-network-cidr=10.244.0.0/16 \
