@@ -294,28 +294,6 @@ kubectl get nodes -owide
 kubectl get pod -A
 ```
 
-## 重置集群
-
-注意：下面的操作会重置当前集群（删除集群）。 
-
-删除集群中所有节点。
-
-```bash
-kubeadm reset
-```
-
-清除`iptables`中已定义的规则。
-
-```bash
-iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
-```
-
-清除`IPVS`中定义的规则（如果使用`IPVS`）。
-
-```bash
-ipvsadm --clear
-```
-
 ## 安装Helm
 
 安装Helm客户端。
@@ -339,4 +317,26 @@ Downloading https://get.helm.sh/helm-v3.9.0-linux-amd64.tar.gz
 Verifying checksum... Done.
 Preparing to install helm into /usr/local/bin
 helm installed into /usr/local/bin/helm
+```
+
+## 重置集群
+
+注意：下面的操作会重置当前集群（删除集群）。
+
+删除集群中所有节点。
+
+```bash
+kubeadm reset
+```
+
+清除`iptables`中已定义的规则。
+
+```bash
+iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+```
+
+清除`IPVS`中定义的规则（如果使用`IPVS`）。
+
+```bash
+ipvsadm --clear
 ```
