@@ -1,4 +1,4 @@
-# 多节点虚拟机安装Kubernetes
+# # CKA自学笔记2:多节点虚拟机安装Kubernetes
 
 ## 摘要
 
@@ -312,7 +312,7 @@ sudo nerdctl -n k8s.io ps
 
 ## 安装Kubernetes
 
-在所有节点上安装Kubernetes。
+在所有节点上安装Kubeadm，kubectl，kubelet。
 
 安装和升级Ubuntu系统依赖包。
 
@@ -336,7 +336,7 @@ sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://mirr
 echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 ```
 
-坚持当前`kubeadm`的版本。
+检查当前`kubeadm`的版本。
 
 ```bash
 apt policy kubeadm
