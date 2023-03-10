@@ -83,21 +83,17 @@ sudo chroot . /bin/bash
 
 5. UTS Namespace：隔离主机名和域名。可以使不同进程拥有自己的独立的主机名和域名空间，从而避免进程之间的命名冲突。
 
+Primitives namespace和Namespace是两个不同的概念。
 
+Namespace是Linux操作系统提供的一种机制，用于隔离不同进程的资源，以实现进程之间的资源隔离和环境隔离。例如，PID Namespace可以使不同进程拥有自己的独立的PID号空间，避免进程之间的PID冲突；Network Namespace可以使不同进程拥有自己的独立的网络栈，从而避免进程之间的网络冲突等。
 
-"Primitives namespace"和"Namespace"是两个不同的概念。
+Primitives namespace是一种新的技术概念，它是指将不同的基本操作（例如读写文件、创建进程、网络通信等）作为原语进行隔离和封装，使得应用程序可以在这些隔离的原语上构建出自己的隔离环境。例如，可以通过隔离文件系统读写操作来实现容器级别的文件系统隔离；通过隔离网络通信操作来实现容器级别的网络隔离等。
 
-"Namespace"是Linux操作系统提供的一种机制，用于隔离不同进程的资源，以实现进程之间的资源隔离和环境隔离。例如，PID Namespace可以使不同进程拥有自己的独立的PID号空间，避免进程之间的PID冲突；Network Namespace可以使不同进程拥有自己的独立的网络栈，从而避免进程之间的网络冲突等。
-
-而"Primitives namespace"是一种新的技术概念，它是指将不同的基本操作（例如读写文件、创建进程、网络通信等）作为原语进行隔离和封装，使得应用程序可以在这些隔离的原语上构建出自己的隔离环境。例如，可以通过隔离文件系统读写操作来实现容器级别的文件系统隔离；通过隔离网络通信操作来实现容器级别的网络隔离等。
-
-因此，"Namespace"和"Primitives namespace"是两个不同的概念，虽然它们都可以用于实现隔离和封装的功能，但是"Namespace"是一种更为通用和底层的机制，而"Primitives namespace"则是一种更为高层的抽象概念，通常用于构建容器等应用级别的隔离环境。
-
-
+因此，Namespace和Primitives namespace是两个不同的概念，虽然它们都可以用于实现隔离和封装的功能，但是Namespace是一种更为通用和底层的机制，Primitives namespace是一种更为高层的抽象概念，通常用于构建容器等应用级别的隔离环境。
 
 Namespace示例：
 
-例如，在Linux系统中，可以使用PID Namespace来隔离进程ID号空间，避免进程之间的PID冲突。下面是一个简单的示例：
+在Linux系统中，可以使用PID Namespace来隔离进程ID号空间，避免进程之间的PID冲突。下面是一个简单的示例：
 
 ```bash
 # 创建一个新的PID Namespace
@@ -106,16 +102,13 @@ unshare -p /bin/bash
 # 在新的PID Namespace中运行一个进程
 echo $$ # 显示当前进程的PID
 ps aux # 显示当前进程及其子进程
-
 ```
 
-在上面的示例中，"unshare -p"命令创建了一个新的PID Namespace，并在其中启动了一个新的bash进程。由于该进程运行在一个独立的PID Namespace中，因此它的PID号与主机上的其他进程不会冲突。在这个新的bash进程中，"$$"命令显示的是该进程在PID Namespace中的PID号，而"ps aux"命令只会显示当前PID Namespace中的进程，不会显示主机上的其他进程。
-
-
+在上面的示例中，`unshare -p`命令创建了一个新的PID Namespace，并在其中启动了一个新的bash进程。由于该进程运行在一个独立的PID Namespace中，因此它的PID号与主机上的其他进程不会冲突。在这个新的bash进程中，`$$`命令显示的是该进程在PID Namespace中的PID号，而`ps aux`命令只会显示当前PID Namespace中的进程，不会显示主机上的其他进程。
 
 Primitives Namespace示例：
 
-例如，在Docker容器中，可以使用Filesystem Namespace来隔离文件系统，使得不同的容器之间拥有独立的文件系统视图。下面是一个简单的示例：
+在Docker容器中，可以使用Filesystem Namespace来隔离文件系统，使得不同的容器之间拥有独立的文件系统视图。下面是一个简单的示例：
 
 ```bash
 # 在容器中运行一个命令
@@ -133,35 +126,99 @@ docker start -i mycontainer
 
 # 在容器中查看文件
 ls myfile # myfile文件存在
-
 ```
 
-在上面的示例中，"docker run"命令启动了一个新的Docker容器，并在其中运行了一个bash进程。由于该容器使用了Filesystem Namespace，因此容器内的文件系统视图与主机上的文件系统视图是隔离的。在容器内创建的文件"myfile"只存在于容器内部，在主机上是看不到的。当再次进入容器时，"myfile"文件就可以被看到了。
-
-
+在上面的示例中，`docker run`命令启动了一个新的Docker容器，并在其中运行了一个bash进程。由于该容器使用了Filesystem Namespace，因此容器内的文件系统视图与主机上的文件系统视图是隔离的。在容器内创建的文件`myfile`只存在于容器内部，在主机上是看不到的。当再次进入容器时，`myfile`文件就可以被看到了。
 
 总结：
 
 Namespace是Linux内核提供的机制，而Primitives Namespace则是一种基于Namespace的高层抽象，用于实现应用级别的隔离和封装。Namespace可以用于隔离多种资源，而Primitives Namespace通常用于隔离文件系统、网络、进程等操作的原语。
 
-
-
-
-
-
-
-
-
-
-
-
-
 ## 控制组
 
-控制组（cgroup）
+cgroup，全称为Control Group，即控制组，是Linux内核提供的一种机制，用于限制、记录、隔离和优先级控制一组进程的资源使用。它可以限制进程组的CPU、内存、磁盘、网络等资源的使用，同时也可以记录进程组的资源使用情况和行为。
 
-- 管理/限制对单个进程的资源分配
-- 进程的优先级
+cgroup通过将一组进程组织成一个层次结构，将资源分配给不同的cgroup来实现资源限制和优先级控制。每个cgroup可以设置资源限制和控制策略，例如可以限制一个进程组最多使用50%的CPU时间，或者限制一个进程组最多使用100MB的内存等。
+
+cgroup最初由Google公司开发，后来被Linux内核社区采纳并加入到内核中，成为Linux系统的一部分。它在容器技术、虚拟化、云计算等领域都有广泛的应用。
+
+
+
+下面是cgroup 的一些常见用途：
+
+1. CPU 限制：使用 cgroup 可以限制进程的 CPU 使用率，避免某个进程占用过多的 CPU 资源导致系统负载过高，从而影响系统稳定性和其他进程的正常运行。
+
+2. 内存限制：使用 cgroup 可以限制进程的内存使用量，避免某个进程占用过多的内存资源导致系统内存不足，从而影响系统性能和其他进程的正常运行。
+
+3. IO 限制：使用 cgroup 可以限制进程的 IO 带宽，避免某个进程占用过多的 IO 资源导致其他进程的 IO 操作受到影响，从而影响系统性能和响应速度。
+
+4. 网络限制：使用 cgroup 可以限制进程的网络带宽，避免某个进程占用过多的网络资源导致网络拥塞，从而影响系统性能和其他进程的正常运行。
+
+5. 进程控制：使用 cgroup 可以限制进程的启动、停止和调度等行为，从而实现对系统进程的控制和管理。
+
+6. 资源统计：使用 cgroup 可以实时统计系统中各个进程的资源使用情况，从而帮助管理员了解系统负载状况和各个进程的性能瓶颈，从而采取相应的措施优化系统性能。
+
+
+
+示例：
+
+需要预先安装 `cgroup-tools`。
+
+首先，创建一个名为 `test_cgroup` 的 cgroup：
+
+```bash
+sudo cgcreate -g cpu,memory:test_cgroup
+```
+
+这将在 `/sys/fs/cgroup` 下创建一个名为 `test_cgroup` 的目录，并在该目录下创建了两个子目录 `cpu` 和 `memory`。
+
+然后，将当前 shell 进程加入到该 cgroup 中：
+
+```bash
+sudo cgclassify -g cpu,memory:test_cgroup $$
+```
+
+其中 `$$` 表示当前 shell 进程的 PID。
+
+现在，可以限制该 cgroup 的 CPU 使用率和内存使用量。例如，将 CPU 使用率限制为 50%：
+
+```bash
+sudo cgset -r cpu.cfs_quota_us=50000 test_cgroup
+```
+
+这里将 `cpu.cfs_quota_us` 属性设置为 50000，表示该 cgroup 的 CPU 使用率不得超过 50%。
+
+再例如，将内存使用量限制为 100 MB：
+
+```bash
+sudo cgset -r memory.limit_in_bytes=100M test_cgroup
+```
+
+这里将 `memory.limit_in_bytes` 属性设置为 100M，表示该 cgroup 的内存使用量不得超过 100 MB。
+
+现在，可以在该 cgroup 中运行一些进程，它们将受到 CPU 和内存限制。例如，运行一个死循环：
+
+```bash
+cgexec -g cpu,memory:test_cgroup bash -c 'while true; do :; done'
+```
+
+这将在该 cgroup 中运行一个死循环，由于 CPU 使用率和内存使用量被限制，该死循环不会占用太多系统资源。
+
+最后，当你不再需要该 cgroup 时，可以删除它：
+
+```
+sudo cgdelete cpu,memory:test_cgroup
+```
+
+这将删除 `/sys/fs/cgroup/cpu/test_cgroup` 和 `/sys/fs/cgroup/memory/test_cgroup` 两个目录及其子目录，同时也将从这个 cgroup 中移除所有进程。
+
+
+
+
+
+
+
+
 
 
 
@@ -173,22 +230,12 @@ Namespace是Linux内核提供的机制，而Primitives Namespace则是一种基�
 
 - 安全配置文件，用于控制对资源的访问
 
-
-
-
-
-
-
 ## 内核能力
 
 内核能力（Kernel capabilities）
 
 - 没有能力：root可以执行所有操作，其他用户可能什么也做不了
 - 38个细粒度的功能来控制权限
-
-
-
-
 
 ## seccomp策略
 
@@ -197,23 +244,11 @@ seccomp策略
 - 限制允许的内核系统调用
 - 不允许的系统调用会导致进程终止
 
-
-
-
-
 ## Netlink
 
 Netlink
 
 - 用于Linux内核与用户空间进程之间以及不同用户空间进程之间的进程间通信（IPC）的Linux内核接口 
-
-
-
-
-
-
-
-
 
 ## Netfilter
 
@@ -222,10 +257,6 @@ Netfilter
 - Linux内核提供的框架，允许各种与网络相关的操作
 - 包过滤、网络地址转换和端口转换（iptables/nftables）
 - 用于将网络数据包定向到单个容器
-
-
-
-
 
 更多信息可以参考 [LXC/LXD](https://linuxcontainers.org/)。
 
