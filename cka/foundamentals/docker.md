@@ -162,8 +162,6 @@ cgroup-tools是一个用于管理Linux控制组（cgroup）的工具集，可以
 
 在新的Systemd v248版本，原有的cgroup-tools软件包已经被废弃，推荐使用Systemd自带的cgroup工具来管理cgroup。
 
-
-
 查看Linux系统中安装的Systemd版本，可以使用以下命令：
 
 ```bash
@@ -201,20 +199,6 @@ systemd-250-6.el9_0.x86_64
 ```
 
 Systemd自带的cgroup工具是一个命令行工具，可以使用它来创建、删除、查看和管理系统中的cgroup。以下是一些常用的命令示例：
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ## Apparmor和SELinux配置文件
 
