@@ -142,8 +142,6 @@ cgroup通过将一组进程组织成一个层次结构，将资源分配给不�
 
 cgroup最初由Google公司开发，后来被Linux内核社区采纳并加入到内核中，成为Linux系统的一部分。它在容器技术、虚拟化、云计算等领域都有广泛的应用。
 
-
-
 下面是cgroup 的一些常见用途：
 
 1. CPU 限制：使用 cgroup 可以限制进程的 CPU 使用率，避免某个进程占用过多的 CPU 资源导致系统负载过高，从而影响系统稳定性和其他进程的正常运行。
@@ -158,59 +156,51 @@ cgroup最初由Google公司开发，后来被Linux内核社区采纳并加入到
 
 6. 资源统计：使用 cgroup 可以实时统计系统中各个进程的资源使用情况，从而帮助管理员了解系统负载状况和各个进程的性能瓶颈，从而采取相应的措施优化系统性能。
 
-
-
 示例：
 
-需要预先安装 `cgroup-tools`。
+cgroup-tools是一个用于管理Linux控制组（cgroup）的工具集，可以通过该工具集来监控和限制进程的资源使用。
 
-首先，创建一个名为 `test_cgroup` 的 cgroup：
+在新的Systemd v248版本，原有的cgroup-tools软件包已经被废弃，推荐使用Systemd自带的cgroup工具来管理cgroup。
 
-```bash
-sudo cgcreate -g cpu,memory:test_cgroup
-```
 
-这将在 `/sys/fs/cgroup` 下创建一个名为 `test_cgroup` 的目录，并在该目录下创建了两个子目录 `cpu` 和 `memory`。
 
-然后，将当前 shell 进程加入到该 cgroup 中：
+查看Linux系统中安装的Systemd版本，可以使用以下命令：
 
 ```bash
-sudo cgclassify -g cpu,memory:test_cgroup $$
+systemctl --version
 ```
 
-其中 `$$` 表示当前 shell 进程的 PID。
+执行后，会输出Systemd的版本信息，例如：
 
-现在，可以限制该 cgroup 的 CPU 使用率和内存使用量。例如，将 CPU 使用率限制为 50%：
+```console
+#openSUSE 15.4
+systemd 249 (249.12+suse.135.g7b70d88264)
+
+#Ubuntu 22.04
+systemd 250 (250-6.el9_0)
+
+#Rocky 9.0
+systemd 249 (249.11-0ubuntu3.6)
+```
+
+其中，249是Systemd的主版本号，249.12是具体的版本号。注意，Systemd的版本号可能因为发行版的不同而有所不同。
+
+还可以使用以下命令来查看Systemd的版本信息：
 
 ```bash
-sudo cgset -r cpu.cfs_quota_us=50000 test_cgroup
+rpm -q systemd
 ```
 
-这里将 `cpu.cfs_quota_us` 属性设置为 50000，表示该 cgroup 的 CPU 使用率不得超过 50%。
+执行后，会输出Systemd的版本信息，例如：
 
-再例如，将内存使用量限制为 100 MB：
-
-```bash
-sudo cgset -r memory.limit_in_bytes=100M test_cgroup
+```console
+#openSUSE
+systemd-249.12-150400.8.10.1.x86_64
+#Rocky 9
+systemd-250-6.el9_0.x86_64
 ```
 
-这里将 `memory.limit_in_bytes` 属性设置为 100M，表示该 cgroup 的内存使用量不得超过 100 MB。
-
-现在，可以在该 cgroup 中运行一些进程，它们将受到 CPU 和内存限制。例如，运行一个死循环：
-
-```bash
-cgexec -g cpu,memory:test_cgroup bash -c 'while true; do :; done'
-```
-
-这将在该 cgroup 中运行一个死循环，由于 CPU 使用率和内存使用量被限制，该死循环不会占用太多系统资源。
-
-最后，当你不再需要该 cgroup 时，可以删除它：
-
-```
-sudo cgdelete cpu,memory:test_cgroup
-```
-
-这将删除 `/sys/fs/cgroup/cpu/test_cgroup` 和 `/sys/fs/cgroup/memory/test_cgroup` 两个目录及其子目录，同时也将从这个 cgroup 中移除所有进程。
+Systemd自带的cgroup工具是一个命令行工具，可以使用它来创建、删除、查看和管理系统中的cgroup。以下是一些常用的命令示例：
 
 
 
