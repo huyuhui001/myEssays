@@ -156,53 +156,225 @@ cgroup最初由Google公司开发，后来被Linux内核社区采纳并加入到
 
 6. 资源统计：使用 cgroup 可以实时统计系统中各个进程的资源使用情况，从而帮助管理员了解系统负载状况和各个进程的性能瓶颈，从而采取相应的措施优化系统性能。
 
-示例：
 
-cgroup-tools是一个用于管理Linux控制组（cgroup）的工具集，可以通过该工具集来监控和限制进程的资源使用。
 
-在新的Systemd v248版本，原有的cgroup-tools软件包已经被废弃，推荐使用Systemd自带的cgroup工具来管理cgroup。
+下面是openSUSE中的示例：
 
-查看Linux系统中安装的Systemd版本，可以使用以下命令：
+安装需要的软件包：
 
 ```bash
-systemctl --version
+sudo zypper install libcgroup-tools
 ```
 
-执行后，会输出Systemd的版本信息，例如：
-
-```console
-#openSUSE 15.4
-systemd 249 (249.12+suse.135.g7b70d88264)
-
-#Ubuntu 22.04
-systemd 250 (250-6.el9_0)
-
-#Rocky 9.0
-systemd 249 (249.11-0ubuntu3.6)
-```
-
-其中，249是Systemd的主版本号，249.12是具体的版本号。注意，Systemd的版本号可能因为发行版的不同而有所不同。
-
-还可以使用以下命令来查看Systemd的版本信息：
+限制CPU使用上限：
 
 ```bash
-rpm -q systemd
+# 创建新的cgroup 'mygroup'
+sudo mkdir /sys/fs/cgroup/cpu/mygroup
+
+# 系统会创建默认的一些文件，含初始值，比如CPU使用时间的限额的默认值是-1
+cat /sys/fs/cgroup/cpu/mygroup/cpu.cfs_quota_us
+
+# 设定CPU使用时间上限
+sudo sh -c "echo 50000 > /sys/fs/cgroup/cpu/mygroup/cpu.cfs_quota_us"
+
+# 启动一个新的进程，并且关联到
+sudo cgcreate -g cpu:mygroup
+sudo cgexec -g cpu:mygroup /bin/bash
 ```
 
-执行后，会输出Systemd的版本信息，例如：
+在上面的例子中，`cpu.cfs_quota_us` 文件设置了 cgroup 中的进程可以使用的最大 CPU 时间。该值以微秒为单位，因此将其设置为 50000 表示进程最多可以使用单个 CPU 核心的 50%。`cgcreate `和 `cgexec `命令创建并将进程`/bin/bash`移动到 `mygroup `cgroup 中。
+
+限制内存使用上限：
+
+```bash
+# 创建新的cgroup 'mygroup'
+sudo mkdir /sys/fs/cgroup/memory/mygroup
+
+# 系统会创建默认的一些文件，含初始值，比如内存使用上限的默认值是9223372036854771712
+cat /sys/fs/cgroup/memory/mygroup/memory.limit_in_bytes
+
+# 设置内存使用上限512MB
+sudo sh -c "echo 536870912 > /sys/fs/cgroup/memory/mygroup/memory.limit_in_bytes"
+
+# 启动一个新的进程，并且关联到'mygroup'
+sudo cgcreate -g memory:mygroup
+sudo cgexec -g memory:mygroup /bin/bash
+```
+
+在上面例子中，`memory.limit_in_bytes` 文件设置了 cgroup 中进程可以使用的最大内存量。该值以字节为单位，因此将其设置为 536870912 表示进程最多可以使用 512MB 的内存。
+
+设置优先进程的 I/O 使用率：
+
+```bash
+# 创建新cgroup 'mygroup'
+sudo mkdir /sys/fs/cgroup/blkio/mygroup
+
+# 设置进程最大读和写的速率10MB/s
+sudo sh -c "echo '8:0 10485760' > /sys/fs/cgroup/blkio/mygroup/blkio.throttle.read_bps_device"
+sudo sh -c "echo '8:0 10485760' > /sys/fs/cgroup/blkio/mygroup/blkio.throttle.write_bps_device"
+
+# 启动一个新的进程，并且关联到'mygroup'
+sudo cgcreate -g blkio:mygroup
+sudo cgexec -g blkio:mygroup /bin/bash
+
+```
+
+在上面例子中，`blkio.throttle.read_bps_device`和`blkio.throttle.write_bps_device`文件设置了cgroup中进程可以使用的最大读取和写入带宽。该值以每秒字节数为单位，因此将其设置为10485760意味着进程在主设备号:次设备号为8:0的设备（通常是第一个硬盘）上读取或写入的带宽最多为10MB/s。
+
+将 `8:0 10485760` 这个字符串写入到 `/sys/fs/cgroup/blkio/mygroup/blkio.throttle.read_bps_device` 文件中的作用是限制 `mygroup` 控制组中关联的块设备（block device）的读取速率。
+
+在 Linux 中，`blkio` 控制组子系统可以用来对进程或线程的块设备访问进行限制，如限制读写速率、I/O 优先级等。而 `blkio.throttle.read_bps_device` 这个文件则用于设置某个块设备的读取速率限制。
+
+具体来说，`8:0` 表示设备的主次编号（major:minor），这里是指磁盘 `/dev/sda`。`10485760` 则是读取速率的限制值，单位是字节/秒。这个值表示 `/dev/sda` 最大读取速率为 10MB/s，超过这个速率的读取请求会被延迟执行，从而限制了磁盘的读取带宽。
+
+因此，以上命令的含义是将 `mygroup` 控制组中关联的 `/dev/sda` 磁盘的读取速率限制为 10MB/s，从而实现对该控制组中进程或线程对磁盘读取的限制。
+
+同理，将 `8:0 10485760` 这个字符串写入到 `/sys/fs/cgroup/blkio/mygroup/blkio.throttle.write_bps_device` 文件中，以限制 `mygroup` 控制组中关联的块设备（block device）的写入速率。
+
+
+
+限制一组进程的网络带宽：
+
+```bash
+# 创建新的cgroup 'mygroup'
+sudo mkdir /sys/fs/cgroup/net_cls/mygroup
+
+# 将此组中的进程的网络类ID设置为“myclass”
+sudo sh -c "echo 0x10001 > /sys/fs/cgroup/net_cls/mygroup/net_cls.classid"
+
+```
+
+上面的例子是将 `0x10001` 这个十六进制数值写入到`/sys/fs/cgroup/net_cls/mygroup/net_cls.classid` 文件中，以指定 `mygroup` 控制组的网络类别标识符（classid）。
+
+网络类别标识符是 Linux 内核中用来实现流量控制和流量分类的一个机制，它可以将数据包按照不同的类别（class）进行标记和区分，然后在网络设备上针对不同的类别进行不同的处理，如限速、优先级调整等。控制组中的 `net_cls` 子系统可以用来将进程或线程与网络类别标识符关联起来，从而实现对它们的网络流量进行控制和分类。
+
+因此，以上命令是将 `mygroup` 控制组的网络类别标识符设置为 `0x10001`，这样与该控制组相关联的进程或线程就会被标记为该类别，然后可以通过其他工具（如 `tc` 命令）对其进行网络流量控制和分类。
+
+
+
+如果遇到对应限制文件不存在，一种可能是需要检查cgroup子系有没有正确统载或者没有启用内存子系统。
+
+```bash
+mount | grep cgroup
+```
+
+如果 cgroups 文件系统已经挂载，应该会看到输出类似于以下内容（）以memory为例）：
+
+```
+cgroup on /sys/fs/cgroup/memory type cgroup (rw,nosuid,nodev,noexec,relatime,memory)
+```
+
+如果没有看到 `memory` 字段，则表示内存子系统没有启用。可以编辑`/etc/default/grub` 文件，添加或修改以下行：
 
 ```console
-#openSUSE
-systemd-249.12-150400.8.10.1.x86_64
-#Rocky 9
-systemd-250-6.el9_0.x86_64
+GRUB_CMDLINE_LINUX_DEFAULT="cgroup_enable=memory"
 ```
 
-Systemd自带的cgroup工具是一个命令行工具，可以使用它来创建、删除、查看和管理系统中的cgroup。以下是一些常用的命令示例：
+然后更新 GRUB 配置并重启系统：
+
+```bash
+sudo update-grub
+sudo reboot
+```
+
+重启后再次检查 `/sys/fs/cgroup/memory/mygroup/memory.limit_in_bytes` 文件是否存在。如果还是不存在，可能需要手动创建它以及其他相关的 cgroups 文件。例如，运行以下命令：
+
+```bash
+sudo mkdir /sys/fs/cgroup/memory/mygroup
+sudo touch /sys/fs/cgroup/memory/mygroup/memory.limit_in_bytes
+```
+
+然后就可以像之前的例子一样设置内存限制了
 
 ## Apparmor和SELinux配置文件
 
 - 安全配置文件，用于控制对资源的访问
+
+
+
+AppArmor 和 SELinux 都是常见的强制访问控制（MAC）机制，可以对进程或应用程序的访问权限进行精细控制。下面分别举例说明这两种机制的配置文件使用。
+
+1. AppArmor
+
+AppArmor 的主配置文件是 `/etc/apparmor/profiles.d/` 目录下的各个文件，每个文件对应一个应用程序或进程的配置。以 `sshd` 服务为例，该服务的配置文件是`/etc/apparmor.d/usr.sbin.sshd`。
+
+该配置文件的内容类似于下面这样：
+
+```console
+# Last Modified: Sun Mar 14 18:53:00 2023
+#include <tunables/global>
+
+/usr/sbin/sshd {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  # allow read access to user home directories
+  /home/** r,
+
+  # allow sshd to execute /usr/bin/which to determine full path of shell
+  /usr/bin/which ix,
+
+  # allow sshd to read its own configuration file
+  /etc/ssh/sshd_config r,
+
+  # allow sshd to read the SSH host keys
+  /etc/ssh/ssh_host_* r,
+
+  # allow sshd to use pam for authentication
+  /usr/share/pam/** r,
+
+  # allow sshd to use nsswitch for name resolution
+  /etc/nsswitch.conf r,
+  /etc/hosts r,
+  /etc/hostname r,
+  /etc/resolv.conf r,
+
+  # allow sshd to write to its own log file
+  /var/log/auth.log w,
+
+  # allow sshd to create and manage pid files
+  /var/run/sshd.pid w,
+  /var/run/sshd.dir/ w,
+  /var/run/sshd.dir/* rw,
+
+  # allow sshd to access systemd-logind
+  /run/systemd/* r,
+  /run/systemd/session/*.scope r,
+  /run/systemd/sessions/*.scope r,
+
+  # deny everything else
+  deny /,
+}
+
+
+```
+
+该配置文件定义了 `/usr/sbin/sshd` 进程的权限限制规则，包括允许访问的文件、禁止访问的文件等。其中 `#include <abstractions/base>` 表示包含了一组通用的权限规则，可以在不同的应用程序配置中重复使用。
+
+2. SELinux
+
+SELinux 的主配置文件是 `/etc/selinux/config`，该文件定义了系统的 SELinux 策略和模式。默认情况下，openSUSE 使用的是 `targeted` 模式。
+
+每个进程或应用程序还需要对应一个 SELinux 配置文件，以定义它们的访问权限。以 `httpd` 服务为例，该服务的 SELinux 配置文件是`/etc/selinux/targeted/contexts/httpd.te`。
+
+该配置文件的内容类似于下面这样：
+
+```bash
+# HTTPD server
+type httpd_t;
+type httpd_sys_script_t;
+init_daemon_domain(httpd_t, httpd_sys_script_t)
+
+```
+
+该配置文件定义了 `httpd` 服务的 SELinux 类型为 `httpd_t`，并使用了`httpd_sys_script_t` 作为其初始化域。其中 `type` 表示 SELinux 类型，`init_daemon_domain` 则是一个 SELinux 宏，用于定义服务的初始域。
+
+需要注意的是，在 SELinux 中，访问权限规则不是直接在配置文件中定义的，而是通过访问控制策略和规则进行控制。这些策略和规则可以使用 SELinux 工具集（如 `semanage`、`setsebool`、`restorecon` 等）进行管理和设置。
+
+比如，在openSUSE中可以看到`/etc/selinux/semanage.conf`文件和其中的配置。
+
+
 
 ## 内核能力
 
@@ -211,30 +383,145 @@ Systemd自带的cgroup工具是一个命令行工具，可以使用它来创建�
 - 没有能力：root可以执行所有操作，其他用户可能什么也做不了
 - 38个细粒度的功能来控制权限
 
+
+
+Kernel capabilities 是 Linux 内核提供的一种机制，用于控制进程对系统资源的访问权限。与传统的 Unix 权限机制不同，Kernel capabilities 可以使管理员在精细控制系统资源访问的同时，避免将过多权限授予进程，提高了系统的安全性。
+
+在传统 Unix 权限机制中，每个进程都有一个有效用户 ID 和一个有效组 ID，这些 ID 决定了该进程对文件、设备、网络等资源的访问权限。但是，这种权限机制不够灵活，如果要授予进程某些特定的权限，可能需要将所有的权限都授予给它，从而降低了系统的安全性。
+
+Kernel capabilities 提供了一种更细粒度的权限控制方式。每个进程都有一组 capabilities，每个 capability 表示一种特定的权限。进程可以请求和释放某些 capability，这样就可以将权限授予进程，而不必授予所有权限。
+
+例如，可以将 `CAP_NET_BIND_SERVICE `capability 授予某个进程，这样该进程就可以绑定 1-1023 的端口，而不必具有 root 权限。类似地，可以将 `CAP_SYS_ADMIN `capability 授予某个进程，这样该进程就可以执行系统管理任务，如挂载文件系统和创建设备节点等。
+
+Linux 内核提供了一组默认的 capabilities，也可以通过自定义的方式创建新的 capabilities，以便更好地控制系统资源的访问权限。可以使用 `setcap `命令为二进制文件设置 capabilities。例如，下面的命令将 `CAP_NET_RAW `capability 授予 `/usr/bin/ping` 命令：
+
+```bash
+sudo setcap cap_net_raw+ep /usr/bin/ping
+```
+
+这样，用户就可以使用 `ping `命令而不必以 root 用户的身份登录。
+
+除了 `CAP_NET_BIND_SERVICE `和 `CAP_SYS_ADMIN`，还有一些其他的 capabilities，以下是一些例子：
+
+- `CAP_DAC_OVERRIDE`：允许进程忽略文件权限，可以访问任何文件。
+- `CAP_CHOWN`：允许进程修改文件的所有者。
+- `CAP_SETUID `和 `CAP_SETGID`：允许进程修改自己的用户 ID 和组 ID。
+- `CAP_NET_ADMIN`：允许进程执行网络管理任务，如配置网络接口和路由表等。
+- `CAP_SYS_RESOURCE`：允许进程修改系统资源限制，如 CPU 时间和内存限制等。
+
+可以通过命令 `man 7 capabilities` 来查看系统提供的 capabilities 列表和详细说明。在使用 Kernel capabilities 时，需要注意，只有拥有 `CAP_SETFCAP `或 `CAP_SYS_ADMIN `capability 的进程才能够修改自己或其他进程的 capabilities，这也是为了保护系统的安全性。
+
+
+
+如果执行 setcap 命令时出现 "command not found" 的错误，这通常意味着 setcap 命令所在的包尚未安装。在 openSUSE 中，setcap 命令包含在 libcap-progs 软件包中。
+
+在 openSUSE 系统中需要安装 libcap-progs 软件包：
+
+```bash
+sudo zypper in libcap-progs
+```
+
+在 Ubuntu/Debian 系统上需要安装 libcap 库：
+
+```bash
+sudo apt-get install libcap2-bin
+```
+
+在 CentOS/RHEL 系统上需要安装 libcap 库：
+
+```bash
+sudo yum install libcap-devel
+```
+
+安装完成后，可以使用 setcap 命令为二进制文件设置 capabilities。如果还是无法找到 setcap 命令，可以尝试使用完整路径 /sbin/setcap 或者 /usr/sbin/setcap。
+
+
+
 ## seccomp策略
 
-seccomp策略
+seccomp（secure computing mode）是 Linux 内核提供的一种安全机制，它可以限制进程能够进行的系统调用。通过使用 seccomp，可以限制进程只能够使用必要的系统调用，从而减少系统被攻击的风险。
 
-- 限制允许的内核系统调用
-- 不允许的系统调用会导致进程终止
+seccomp 策略可以使用 BPF（Berkeley Packet Filter）语言编写，并使用 seccomp() 系统调用加载。以下是一个使用 seccomp 策略限制进程能够进行的系统调用的示例：
+
+```c
+#include <linux/seccomp.h>
+#include <sys/prctl.h>
+#include <unistd.h>
+
+int main() {
+    // 创建 seccomp 过滤器
+    struct sock_filter filter[] = {
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, 0),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, __NR_write, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL),
+    };
+    struct sock_fprog prog = {
+        .len = sizeof(filter) / sizeof(filter[0]),
+        .filter = filter,
+    };
+
+    // 加载 seccomp 过滤器
+    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) < 0) {
+        perror("prctl");
+        return 1;
+    }
+
+    // 调用 write 系统调用
+    char buf[] = "Hello, world!";
+    write(1, buf, sizeof(buf));
+    return 0;
+}
+
+```
+
+上述代码创建了一个 seccomp 过滤器，仅允许进程调用 write() 系统调用，其他系统调用均会被禁止。可以通过编译并运行上述代码来演示 seccomp 策略的作用。
+
+需要注意的是，seccomp 策略只能够限制进程进行的系统调用，但不能够限制系统调用的参数或返回值。因此，使用 seccomp 策略时需要特别小心，避免误用或产生漏洞。
+
+
 
 ## Netlink
 
-Netlink
+Netlink 是一种 Linux 内核提供的通信机制，用于内核和用户空间进程之间的双向通信（IPC）。Netlink 可以用于许多目的，例如：
 
-- 用于Linux内核与用户空间进程之间以及不同用户空间进程之间的进程间通信（IPC）的Linux内核接口 
+1. 配置网络设备和路由表：使用 Netlink 可以通过用户空间进程修改内核的网络设备和路由表配置，例如添加、删除、修改网络接口、IP 地址、路由等。
+
+2. 监视网络事件：使用 Netlink 可以实时地从内核获取网络事件的通知，例如网络接口的状态变化、路由的变化等。
+
+3. 程序间通信：使用 Netlink 可以在用户空间进程之间进行通信，类似于 Unix 域套接字。
+
+Netlink 机制基于一种特殊的套接字类型（PF_NETLINK）和一个特定的协议（NETLINK）。用户空间进程可以通过创建 Netlink 套接字和内核通信。内核和用户空间进程之间的通信是基于 Netlink 消息的，每个 Netlink 消息包含一个消息头和一个负载（payload），负载可以是任何结构体或二进制数据。
+
+Netlink 消息的类型和格式由内核定义。用户空间进程需要了解内核的 Netlink 消息格式和类型，才能正确地构造和解析 Netlink 消息。常用的 Netlink 消息类型包括：
+
+1. RTM_NEWLINK 和 RTM_DELLINK：添加和删除网络接口。
+
+2. RTM_NEWADDR 和 RTM_DELADDR：添加和删除 IP 地址。
+
+3. RTM_NEWROUTE 和 RTM_DELROUTE：添加和删除路由。
+
+4. RTM_NEWNEIGH 和 RTM_DELNEIGH：添加和删除 ARP 表项。
+
+Netlink 可以使用 C 语言的 socket API 进行编程。
 
 ## Netfilter
 
-Netfilter
+Netfilter是Linux内核中的一个子系统，用于在数据包传输过程中进行过滤和操作。它支持对网络数据包进行各种类型的处理，包括过滤、修改、重定向等。Netfilter通过在内核中注册钩子函数，在数据包通过网络栈的不同阶段时进行拦截和处理。
 
-- Linux内核提供的框架，允许各种与网络相关的操作
-- 包过滤、网络地址转换和端口转换（iptables/nftables）
-- 用于将网络数据包定向到单个容器
+Netfilter的核心是iptables命令，它可以用来配置Netfilter规则。iptables命令可以用来配置防火墙规则，NAT规则，限制连接速度等。iptables命令通过匹配不同的数据包字段（例如源IP地址、目的IP地址、源端口、目的端口等）来进行过滤。
+
+除了iptables命令，还有其他一些工具可以用于配置Netfilter规则，例如nftables命令和firewalld服务。这些工具提供了更灵活、更强大的配置选项，可以帮助管理员更好地管理和保护网络安全。
+
+也可以用于将网络数据包定向到单个容器。
+
+
 
 更多信息可以参考 [LXC/LXD](https://linuxcontainers.org/)。
 
-Let's download an image `alpine` to simulate an root file system under `/opt/test` folder.
+
+
+下面通过一个容器`alpine`的例子来演示在目录`/opt/test`下模拟实现根目录。
 
 ```bash
 mkdir test
@@ -243,15 +530,15 @@ wget https://dl-cdn.alpinelinux.org/alpine/v3.13/releases/x86_64/alpine-miniroot
 tar zxvf alpine-minirootfs-3.13.4-x86_64.tar.gz -C alpine-minirootfs/
 ```
 
-Current directory structure.
+查看当前目录结构：
 
-```console
+```bash
 tree ./test -L 1
 ```
 
-Output
+输出结果：
 
-```
+```console
 ./test
 ├── alpine-minirootfs-3.13.4-x86_64.tar.gz
 ├── bin
@@ -273,13 +560,13 @@ Output
 └── var
 ```
 
-Mount folder `/opt/test/proc` to a file and use command `unshare` to build a guest system.
+通过命令`unshare`挂载目录 `/opt/test/proc` 到某个文件来实现客户子系统。
 
-```console
+```bash
 sudo mount -t tmpfs tmpfs /opt/test/proc
 ```
 
-```console
+```bash
 sudo unshare --pid --mount-proc=$PWD/test/proc --fork chroot ./test/ /bin/sh
 / # ps -ef
 PID   USER     TIME  COMMAND
@@ -290,31 +577,31 @@ PID   USER     TIME  COMMAND
 123
 ```
 
-The file `123` created in guest system is accessable and writable from host system.
+文件`123`在客户子系统中已创建，对应主系统中也可以对其进行读写操作。比如，修改文件`123`的内容。
 
-```console
+```bash
 su -
 ls 123
 echo hello > 123
 ```
 
-We will see above change in guest system.
+文件`123`修改后的内容在客户机里面也可见。
 
-```console
+```bash
 / # cat 123
 hello
 ```
 
-Let's create two folders `/opt/test-1` and `/opt/test-2`.
+在主系统中再创建两个子目录 `/opt/test-1` 和`/opt/test-2`。
 
-```console
+```bash
 mkdir test-1
 mkdir test-2
 ```
 
-Create two guests system. Mount `/opt/test/home/` to different folders for different guests.
+创建2个客户子系统，并将上面的两个子目录挂在到各自的 `/opt/test/home/`目录。
 
-```console
+```bash
 sudo mount --bind /opt/test-1 /opt/test/home/
 sudo unshare --pid --mount-proc=$PWD/test/proc --fork chroot ./test/ /bin/sh
 / # cd /home
@@ -323,7 +610,7 @@ sudo unshare --pid --mount-proc=$PWD/test/proc --fork chroot ./test/ /bin/sh
 test-1
 ```
 
-```console
+```bash
 sudo mount --bind /opt/test-2 /opt/test/home/
 sudo unshare --pid --mount-proc=$PWD/test/proc --fork chroot ./test/ /bin/sh
 / # cd /home
@@ -332,15 +619,15 @@ sudo unshare --pid --mount-proc=$PWD/test/proc --fork chroot ./test/ /bin/sh
 test-2
 ```
 
-```console
+```bash
 ll test/home
 ll test-1/
 ll test-2/
 ```
 
-With above demo, the conclusion is that two guests share same home folder on host system and will impact each other.
+通过上面的演示，可以得出结论，两个客户子系统挂在到同一个主系统目录时，子系统时共享主系统目录，并相互影响。
 
-## Installing Docker
+## 安装Docker
 
 Install Docker engine by referring the [guide](https://docs.docker.com/engine/), and Docker Desktop by referring the [guide](https://docs.docker.com/desktop/).
 
