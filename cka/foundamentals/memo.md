@@ -1,6 +1,6 @@
-# Kubernetes Learning Memo
+# CKA自学笔记5:Kubernetes基本概念散记
 
-## Basic Concepts of Kubernetes
+## Kubernetes基本概念
 
 ### Kubernetes Components
 
