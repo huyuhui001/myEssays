@@ -1,5 +1,11 @@
 # Docker Fundamentals
 
+## 摘要
+
+了解Linux原语的概念和包含的特性。
+
+安装Docker，了解基本的Docker命令和Dockerfile的使用。
+
 ## 练习环境
 
 操作系统：openSUSE 15.3
@@ -41,7 +47,7 @@ HOME_URL="https://www.opensuse.org/"
 
 - 信号量（Semaphores）：信号量是Linux中控制对共享资源访问的一种方式。它们允许进程协调它们对共享资源的访问，如文件或内存。
 
-## chroot
+### chroot
 
 chroot使用pivot_root，以实现将*进程*的根目录更改为任何给定的目录。
 
@@ -67,7 +73,7 @@ b. 更改根文件系统
 sudo chroot . /bin/bash
 ```
 
-## 命名空间
+### 命名空间
 
 在Linux操作系统中，Namespace（命名空间）是一种机制，用于隔离不同进程的资源。通过Namespace机制，可以将一组进程及其子进程的视图隔离在一个独立的Namespace中，从而实现进程之间资源隔离的目的。
 
@@ -134,7 +140,7 @@ ls myfile # myfile文件存在
 
 Namespace是Linux内核提供的机制，而Primitives Namespace则是一种基于Namespace的高层抽象，用于实现应用级别的隔离和封装。Namespace可以用于隔离多种资源，而Primitives Namespace通常用于隔离文件系统、网络、进程等操作的原语。
 
-## 控制组
+### 控制组
 
 cgroup，全称为Control Group，即控制组，是Linux内核提供的一种机制，用于限制、记录、隔离和优先级控制一组进程的资源使用。它可以限制进程组的CPU、内存、磁盘、网络等资源的使用，同时也可以记录进程组的资源使用情况和行为。
 
@@ -155,8 +161,6 @@ cgroup最初由Google公司开发，后来被Linux内核社区采纳并加入到
 5. 进程控制：使用 cgroup 可以限制进程的启动、停止和调度等行为，从而实现对系统进程的控制和管理。
 
 6. 资源统计：使用 cgroup 可以实时统计系统中各个进程的资源使用情况，从而帮助管理员了解系统负载状况和各个进程的性能瓶颈，从而采取相应的措施优化系统性能。
-
-
 
 下面是openSUSE中的示例：
 
@@ -217,7 +221,6 @@ sudo sh -c "echo '8:0 10485760' > /sys/fs/cgroup/blkio/mygroup/blkio.throttle.wr
 # 启动一个新的进程，并且关联到'mygroup'
 sudo cgcreate -g blkio:mygroup
 sudo cgexec -g blkio:mygroup /bin/bash
-
 ```
 
 在上面例子中，`blkio.throttle.read_bps_device`和`blkio.throttle.write_bps_device`文件设置了cgroup中进程可以使用的最大读取和写入带宽。该值以每秒字节数为单位，因此将其设置为10485760意味着进程在主设备号:次设备号为8:0的设备（通常是第一个硬盘）上读取或写入的带宽最多为10MB/s。
@@ -232,8 +235,6 @@ sudo cgexec -g blkio:mygroup /bin/bash
 
 同理，将 `8:0 10485760` 这个字符串写入到 `/sys/fs/cgroup/blkio/mygroup/blkio.throttle.write_bps_device` 文件中，以限制 `mygroup` 控制组中关联的块设备（block device）的写入速率。
 
-
-
 限制一组进程的网络带宽：
 
 ```bash
@@ -242,7 +243,6 @@ sudo mkdir /sys/fs/cgroup/net_cls/mygroup
 
 # 将此组中的进程的网络类ID设置为“myclass”
 sudo sh -c "echo 0x10001 > /sys/fs/cgroup/net_cls/mygroup/net_cls.classid"
-
 ```
 
 上面的例子是将 `0x10001` 这个十六进制数值写入到`/sys/fs/cgroup/net_cls/mygroup/net_cls.classid` 文件中，以指定 `mygroup` 控制组的网络类别标识符（classid）。
@@ -250,8 +250,6 @@ sudo sh -c "echo 0x10001 > /sys/fs/cgroup/net_cls/mygroup/net_cls.classid"
 网络类别标识符是 Linux 内核中用来实现流量控制和流量分类的一个机制，它可以将数据包按照不同的类别（class）进行标记和区分，然后在网络设备上针对不同的类别进行不同的处理，如限速、优先级调整等。控制组中的 `net_cls` 子系统可以用来将进程或线程与网络类别标识符关联起来，从而实现对它们的网络流量进行控制和分类。
 
 因此，以上命令是将 `mygroup` 控制组的网络类别标识符设置为 `0x10001`，这样与该控制组相关联的进程或线程就会被标记为该类别，然后可以通过其他工具（如 `tc` 命令）对其进行网络流量控制和分类。
-
-
 
 如果遇到对应限制文件不存在，一种可能是需要检查cgroup子系有没有正确统载或者没有启用内存子系统。
 
@@ -287,11 +285,9 @@ sudo touch /sys/fs/cgroup/memory/mygroup/memory.limit_in_bytes
 
 然后就可以像之前的例子一样设置内存限制了
 
-## Apparmor和SELinux配置文件
+### Apparmor和SELinux配置文件
 
 - 安全配置文件，用于控制对资源的访问
-
-
 
 AppArmor 和 SELinux 都是常见的强制访问控制（MAC）机制，可以对进程或应用程序的访问权限进行精细控制。下面分别举例说明这两种机制的配置文件使用。
 
@@ -346,8 +342,6 @@ AppArmor 的主配置文件是 `/etc/apparmor/profiles.d/` 目录下的各个文
   # deny everything else
   deny /,
 }
-
-
 ```
 
 该配置文件定义了 `/usr/sbin/sshd` 进程的权限限制规则，包括允许访问的文件、禁止访问的文件等。其中 `#include <abstractions/base>` 表示包含了一组通用的权限规则，可以在不同的应用程序配置中重复使用。
@@ -365,7 +359,6 @@ SELinux 的主配置文件是 `/etc/selinux/config`，该文件定义了系统�
 type httpd_t;
 type httpd_sys_script_t;
 init_daemon_domain(httpd_t, httpd_sys_script_t)
-
 ```
 
 该配置文件定义了 `httpd` 服务的 SELinux 类型为 `httpd_t`，并使用了`httpd_sys_script_t` 作为其初始化域。其中 `type` 表示 SELinux 类型，`init_daemon_domain` 则是一个 SELinux 宏，用于定义服务的初始域。
@@ -374,16 +367,12 @@ init_daemon_domain(httpd_t, httpd_sys_script_t)
 
 比如，在openSUSE中可以看到`/etc/selinux/semanage.conf`文件和其中的配置。
 
-
-
-## 内核能力
+### 内核能力
 
 内核能力（Kernel capabilities）
 
 - 没有能力：root可以执行所有操作，其他用户可能什么也做不了
 - 38个细粒度的功能来控制权限
-
-
 
 Kernel capabilities 是 Linux 内核提供的一种机制，用于控制进程对系统资源的访问权限。与传统的 Unix 权限机制不同，Kernel capabilities 可以使管理员在精细控制系统资源访问的同时，避免将过多权限授予进程，提高了系统的安全性。
 
@@ -411,8 +400,6 @@ sudo setcap cap_net_raw+ep /usr/bin/ping
 
 可以通过命令 `man 7 capabilities` 来查看系统提供的 capabilities 列表和详细说明。在使用 Kernel capabilities 时，需要注意，只有拥有 `CAP_SETFCAP `或 `CAP_SYS_ADMIN `capability 的进程才能够修改自己或其他进程的 capabilities，这也是为了保护系统的安全性。
 
-
-
 如果执行 setcap 命令时出现 "command not found" 的错误，这通常意味着 setcap 命令所在的包尚未安装。在 openSUSE 中，setcap 命令包含在 libcap-progs 软件包中。
 
 在 openSUSE 系统中需要安装 libcap-progs 软件包：
@@ -435,9 +422,7 @@ sudo yum install libcap-devel
 
 安装完成后，可以使用 setcap 命令为二进制文件设置 capabilities。如果还是无法找到 setcap 命令，可以尝试使用完整路径 /sbin/setcap 或者 /usr/sbin/setcap。
 
-
-
-## seccomp策略
+### seccomp策略
 
 seccomp（secure computing mode）是 Linux 内核提供的一种安全机制，它可以限制进程能够进行的系统调用。通过使用 seccomp，可以限制进程只能够使用必要的系统调用，从而减少系统被攻击的风险。
 
@@ -472,16 +457,13 @@ int main() {
     write(1, buf, sizeof(buf));
     return 0;
 }
-
 ```
 
 上述代码创建了一个 seccomp 过滤器，仅允许进程调用 write() 系统调用，其他系统调用均会被禁止。可以通过编译并运行上述代码来演示 seccomp 策略的作用。
 
 需要注意的是，seccomp 策略只能够限制进程进行的系统调用，但不能够限制系统调用的参数或返回值。因此，使用 seccomp 策略时需要特别小心，避免误用或产生漏洞。
 
-
-
-## Netlink
+### Netlink
 
 Netlink 是一种 Linux 内核提供的通信机制，用于内核和用户空间进程之间的双向通信（IPC）。Netlink 可以用于许多目的，例如：
 
@@ -505,7 +487,7 @@ Netlink 消息的类型和格式由内核定义。用户空间进程需要了解
 
 Netlink 可以使用 C 语言的 socket API 进行编程。
 
-## Netfilter
+### Netfilter
 
 Netfilter是Linux内核中的一个子系统，用于在数据包传输过程中进行过滤和操作。它支持对网络数据包进行各种类型的处理，包括过滤、修改、重定向等。Netfilter通过在内核中注册钩子函数，在数据包通过网络栈的不同阶段时进行拦截和处理。
 
@@ -515,13 +497,34 @@ Netfilter的核心是iptables命令，它可以用来配置Netfilter规则。ipt
 
 也可以用于将网络数据包定向到单个容器。
 
-
-
 更多信息可以参考 [LXC/LXD](https://linuxcontainers.org/)。
 
+## 安装Docker
 
+参考[指导](https://docs.docker.com/engine/)安装Docker引擎。
+参考[指导](https://docs.docker.com/desktop/)安装Docker桌面版。
 
-下面通过一个容器`alpine`的例子来演示在目录`/opt/test`下模拟实现根目录。
+下面以openSUSE为例安装Docker引擎。
+
+```bash
+sudo zypper in docker
+```
+
+在安装过程中，在操作系统中会自动创建组`docker`。 将vagrant用户加入docker组，则vagrant用户可以在下次登录后与本机的Docker守护进程（daemon）进行通信。Docker守护进程监听本地套接字，只能由root用户和docker组的成员访问。
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+启用并启动 Docker 引擎。
+
+```bash
+sudo systemctl enable docker.service 
+sudo systemctl start docker.service 
+sudo systemctl status docker.service
+```
+
+下面通过一个容器`alpine`的例子来演示在目录`/opt/test`下模拟实现choot。
 
 ```bash
 mkdir test
@@ -627,41 +630,13 @@ ll test-2/
 
 通过上面的演示，可以得出结论，两个客户子系统挂在到同一个主系统目录时，子系统时共享主系统目录，并相互影响。
 
-## 安装Docker
+## 容器生命周期
 
-Install Docker engine by referring the [guide](https://docs.docker.com/engine/), and Docker Desktop by referring the [guide](https://docs.docker.com/desktop/).
+### 概述
 
-Install engine via openSUSE repository automatically.
+预先下载下列镜像。
 
-```console
-sudo zypper in docker
-```
-
-The docker group is automatically created at package installation time. 
-The user can communicate with the local Docker daemon upon its next login. 
-The Docker daemon listens on a local socket which is accessible only by the root user and by the members of the docker group. 
-
-Add current user to `docker` group.
-
-```console
-sudo usermod -aG docker $USER
-```
-
-Enable and start Docker engine.
-
-```console
-sudo systemctl enable docker.service 
-sudo systemctl start docker.service 
-sudo systemctl status docker.service
-```
-
-## Container lifecycle
-
-### Overview
-
-Pull down below images in advance.
-
-```console
+```bash
 docker image pull busybox
 docker image pull nginx
 docker image pull alpine
@@ -670,12 +645,11 @@ docker image pull golang:1.12-alpine
 docker image pull golang
 ```
 
-Download some docker images.
-Create and run a new busybox container interactively and connect a pseudo terminal to it.
-Inside the container, use the top command to find out that `/bin/sh` is running as process with the PID 1 and `top` process is also running. 
-After that, just exit.
+创建并交互式运行一个新的busybox容器，并连接一个伪终端（pseudo terminal）。
+在容器内，使用`top`命令查找`/bin/sh`正在作为PID为1的进程运行，以及`top`进程也在运行。
+然后，退出容器。
 
-```console
+```bash
 docker image ls
 docker run -d -it --name busybox_v1 -v /opt/test:/docker busybox:latest /bin/sh
 docker container ps -a
@@ -691,11 +665,11 @@ Load average: 0.38 1.09 1.29 2/277 14
 / # exitbuild 
 ```
 
-Start a new nginx container in detached mode.
-Use the `docker exec` command to start another shell (`/bin/sh`) in the nginx container. 
-Use ps to find out that `sh` and `ps` commands are running in your container.
+启动一个新的 `Nginx` 容器，并以独立模式（detached mode）运行。
+使用 `docker exec` 命令在 Nginx 容器中启动另一个 shell（`/bin/sh`）。
+使用 `ps` 命令查看容器中正在运行的 `sh` 和 `ps` 命令（在上一步执行的）。
 
-```console
+```bash
 docker run -d -it --name nginx_v1 -v /opt/test:/docker nginx:latest /bin/sh
 docker container ps -a
 docker exec -it edb640127a0d /bin/sh
@@ -709,90 +683,84 @@ docker exec -it edb640127a0d /bin/sh
 # exit
 ```
 
-Now we have two running containers below.
+通过下面命令可以看到2个现在运行中的容器。
 
-```console
+```bash
 docker container ps -a
 ```
 
-Let's use `docker logs` to display the logs of the container we just exited from. 
-The option `--since 35m` means display log in last 35 minutes.
+使用 `docker logs` 命令显示我们刚刚退出的容器的日志。选项 `--since 35m` 表示显示最近 35 分钟内的日志。
 
-```console
+```bash
 docker logs nginx_v1 --details --since 35m
 docker logs busybox_v1 --details --since 35m
 ```
 
-Let's make use of this to create a new stage:
+使用 `docker stop` 命令来停止 nginx 容器。
 
-Use the `docker stop` command to end your nginx container.
-
-```console
+```bash
 docker stop busybox_v1
 docker stop nginx_v1 
 docker container ps -a
 ```
 
-With above command `docker container ps -a`, we get a list of all running and exited containers. 
-Remove them with docker rm.
-Use `docker rm $(docker ps -aq)` to clean up all containers on your host. Use it with caution!
+使用上述命令`docker container ps -a`，我们可以获取所有正在运行和已退出的容器列表。使用`docker rm`将其删除。使用`docker rm $(docker ps -aq)`来清理主机上的所有容器。请谨慎使用！
 
-```console
+```bash
 docker rm busybox_v1
 docker container ps -a
 ```
 
-### Ports and volumes
+### 端口和卷
 
-Now, let's run an nginx webserver in a container and serve a website to the outside world.
+现在启动一个新的 nginx 容器，并将 nginx web 服务器的端口导出到 Docker 随机选择的端口。
 
-Start a new nginx container and export the port of the nginx webserver to a random port that is chosen by Docker. 
+我们可以使用命令 `docker ps` 找出 web 服务器转发到了哪个端口。在主机上使用转发的端口号访问 `docker http://localhost:<port#>`。
 
-Use command `docker ps` to find you which port the webserver is forwarded. Access the docker with the forwarded port number on host `http://localhost:<port#>`.
-
-```console
+```bash
 docker container ps -a
 docker run -d -P --name nginx_v2 nginx:latest
 docker container ps -a
 ```
 
 Start another nginx container and expose port to `1080` on host as an example via `http://localhost:1080`.
+启动另一个nginx容器，将其端口映射到主机的1080端口，可以通过`http://localhost:1080`访问。
 
-```console
+```bash
 docker run -d -p 1080:80 --name nginx_v3 nginx:latest
 docker container ps -a
 ```
 
-Let's make use of this to create a new stage:
+使用`docker inspect`命令查找镜像暴露的端口号，输出JSON格式文件，网络信息（IP、网关、端口等）是输出JSON格式的一部分。
 
-Use command `docker inspect` to find out which port is exposed by the image. Network information (ip, gateway, ports, etc.) is part of the output JSON format.
-
-```console
+```bash
 docker inspect nginx_v3 
 ```
 
-Create a file `index.html` in folder `/opt/test` with below sample content. 
+在目录 `/opt/test` 中创建一个名为 `index.html` 的文件，其内容如下：
 
-    <html>
-    <head>
-        <title>Sample Website from my container</title>
-    </head>
-    <body>
-        <h1>This is a custom website.</h1>
-        <p>This website is served from my <a href="http://www.docker.com" target="_blank">Docker</a> container.</p>
-    </body>
-    </html>
+```html
+<html>
+<head>
+    <title>Sample Website from my container</title>
+</head>
+<body>
+    <h1>This is a custom website.</h1>
+    <p>This website is served from my <a href="http://www.docker.com" target="_blank">Docker</a> container.</p>
+</body>
+</html>
+```
 
-Start a new container that bind-mounts host directory `/opt/test` to container directory `/usr/share/nginx/html` as a volume, so that NGINX will publish the HTML file wee just created instead of its default message via `http://localhost:49159/` below.
+启动一个新容器，将主机目录 `/opt/test` 与容器目录 `/usr/share/nginx/html` 绑定挂载为一个卷，以便Nginx可以通过 `http://localhost:49159/` 发布我们刚创建的html文件，而不是Nginx默认的页面。
 
-```console
+```bash
 docker run -d -P --mount type=bind,source=/opt/test/,target=/usr/share/nginx/html --name nginx_v3-1 nginx:latest
 docker container ps -a
 ```
 
-Check nginx config file on where is the html home page stored in container.
+检查Nginx配置文件，查看容器中html主页存储的位置。
 
-```console
+```bash
 docker exec -it nginx_v3-1 /bin/sh
 # cd /etc/nginx/conf.d
 # ls
@@ -856,38 +824,38 @@ server {
 # 
 ```
 
-It's recommendable to add a persistence with volumes API, instead of storing data in a docker container. Docker supports 2 ways of mount:
+推荐使用卷 API 来实现数据持久化，而不是将数据存储在 Docker 容器中。Docker 支持两种挂载方式：
 
-* Bind mounts: 
-  * mount a local host directory onto a certain path in the container. 
-  * Everything that was present before in the target directory is hidden (nature of the bind mount). 
-  * For example, if you have some configuration you want to inject, write your config file, store it on your docker host at `/home/container/config` and mount the content of this directory to `/usr/application/config` (assuming the application reads config from there). 
-  * Command: `docker run --mount type=bind,source=<source path>,target=<container path> …`
-* Named volumes: 
-  * docker can create a separated storage volume. 
-  * Its lifecycle is independent from the container but still managed by docker. 
-  * Upon creation, the content of the mount target is merged into the volume. 
-  * Command: `docker run --mount source=<vol name>,target=<container path> …`
+- 绑定挂载（Bind mounts）：
+  - 将本地主机目录挂载到容器中的某个路径。
+  - 挂载后，目标目录中原有的所有内容将被隐藏。
+  - 例如，如果我们想要注入某些配置文件，我们需要自己写对应的配置文件，将其存储在 Docker 主机上的`/home/container/config`路径下，并将此目录的内容挂载到 `/usr/application/config`（假设应用程序从此处读取配置）。
+  - 命令：`docker run --mount type=bind,source=<source path>,target=<container path> …`
+- 命名卷（Named volumes）：
+  - Docker 可以创建一个独立的存储卷，其生命周期独立于容器但仍由 Docker 管理。
+  - 在创建时，挂载目标的内容将合并到卷中。
+  - 命令：`docker run --mount source=<vol name>,target=<container path> …`
 
-How to differentiate between bind mountbuild s and named volumes? 
+如何区分绑定挂载和命名卷？
 
-* When specifying an absolute path, docker assumes a bind mount. 
-* When you just give a name (like in a relative path “config”), it will assume a named volume and create a volume “config”.
-* Note: Persistent storage is 'provided' by the host. It can be a part of the file system on the host directly but also an NFS mount. 
+- 当指定绝对路径时，Docker 会认为这是一个绑定挂载。
+- 当我们仅提供名称（如相对路径`config`）时，它会认为这是一个命名卷，并创建一个名为`config`的卷。
+
+注：持久存储由主机提供，可以直接是主机文件系统的一部分，也可以是 NFS 挂载。
 
 ### Dockerfile
 
-Let's build an image with a Dockerfile,build  tag it and upload it to a registry. 
+让我们用 Dockerfile 构建一个镜像，对其进行打标签并上传到镜像仓库。
 
-Get docker image build history.
+获取 Docker 镜像的构建历史记录。
 
-```console
+```bash
 docker image history nginx:latest 
 ```
 
-Create an empty directory `/opt/tmp-1`, change to the directory and create an sample `index.html` file in `/opt/tmp-1`.
+创建一个空的目录`/opt/tmp-1`，进入该目录并在其中创建`index.html`文件。
 
-```console
+```bash
 /opt/tmp-1> cat index.html 
   <html>
   <head>
@@ -900,44 +868,46 @@ Create an empty directory `/opt/tmp-1`, change to the directory and create an sa
   </html>
 ```
 
-Use `FROM` to extend an existing image, specify the release number.
+使用`FROM`来扩展一个已有的镜像，并指定版本号。
 
-Use `COPY` to copy a new default website into the image, e.g., `/usr/share/nginx/html`
+使用`COPY`将一个新的默认网站复制到镜像中，例如 `/usr/share/nginx/html`。
 
-Create SSL configuration `/opt/tmp-1/ssl.conf` for nginx.
+为Nginx创建SSL配置`/opt/tmp-1/ssl.conf`。
 
-    server {
-        listen       443 ssl;
-        server_name  localhost;
-    
-        ssl_certificate /etc/nginx/ssl/nginx.crt;
-        ssl_certificate_key /etc/nginx/ssl/nginx.key;
-    
-        location / {
-            root   /usr/share/nginx/html;
-            index  index.html index.htm;
-        }
+```conf
+server {
+    listen       443 ssl;
+    server_name  localhost;
+
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
     }
+}
+```
 
-Use OpenSSL to create a self-signed certificate so SSL/TLS to work would work.
+使用OpenSSL创建一个自签名证书，以便SSL/TLS工作。
 
-Use the following command to create an encryption key and a certificate.
+使用以下命令创建一个加密密钥和证书。
 
-```console
+```bash
 openssl req -x509 -nodes -newkey rsa:4096 -keyout nginx.key -out nginx.crt -days 365 -subj "/CN=$(hostname)"
 ```
 
-To enable encrypted HTTPS, we need to expose port 443 with the EXPOSE directive. The default nginx image only exposes port 80 for unencrypted HTTP.
+为了启用加密的HTTPS，我们需要使用`EXPOSE`指令公开`443`端口。默认的nginx镜像仅公开端口`80`，用于非加密的HTTP。
 
-In summary, we create below Dockerfile in foder `/opt/tmp-1`. 
+在`/opt/tmp-1`文件夹中创建以下Dockerfile。
 
-```console
+```bash
 cat Dockerfile
 ```
 
-Output
+输出：
 
-```
+```console
 FROM nginx:latest
 
 # copy the custom website into the image
@@ -954,21 +924,21 @@ COPY nginx.crt /etc/nginx/ssl/
 EXPOSE 443
 ```
 
-We have five files in foder `/opt/tmp-1` till now.
+至此，我们在目录`/opt/tmp-1`下有5个文件。
 
-```console
+```bash
 ls /opt/tmp-1
 ```
 
-Output
+输出：
 
-```
+```console
 Dockerfile  index.html  nginx.crt  nginx.key  ssl.conf
 ```
 
-Now let's use the `docker build` command to build the image, forward the containers ports 80 and 443.
+使用`docker build`命令来构建镜像，并将容器的80和443端口转发。
 
-```console
+```bash
 docker build -t nginx:my1 /opt/tmp-1/
 docker image ls
 
@@ -977,45 +947,47 @@ docker run -d -p 1086:80 -p 1088:443 --name nginx_v5 nginx:my1
 docker container ps -a
 ```
 
-Above changes can be validated via below links:
+通过下面两个链接来验证上面的变化是否生效。
 
-    http://localhost:1086/
-    https://localhost:1088/
+- http://localhost:1086/
+- https://localhost:1088/
 
-Register an account in [DockerHub](https://hub.docker.com/) and enable access token in Docker Hub for CLI client authentication.
+在[DockerHub](https://hub.docker.com/) 注册一个个人账号，启用 Docker Hub 中的访问令牌以进行 CLI 客户端身份验证。
 
-```console
+```bash
 docker login
 ```
 
-Input username and password.
+输入用户名和密码。
 
-```
+```console
 Username: <your account id>
 Password: <token>
 ```
 
-Tag the image to give image a nice name and a release number as tag, e.g., name is `secure_nginx_0001`, tag is `v1`.
+给这个镜像加上一个标签，例如：secure_nginx_0001，版本号为 v1。
 
-```console
+```bash
 docker tag nginx:my1 <your account id>secure_nginx_0001:v1
 docker push <your account id>secure_nginx_0001:v1
 docker image ls
 ```
 
-### Multi-stage Dockerfile
+### 多阶段Dockerfile
 
-Let's show an example of multi-stage build. The multi-stage in the context of Docker means, we can have more than one line with a FROM keyword. 
+下面的例子是演示一个多阶段（Multi-stage）构建的例子。在Docker的上下文中，多阶段（Multi-stage）意味着我们可以有多个带有`FROM`关键字的行。
 
-Create folder `/opt/tmp-2` and `/opt/tmp-2/tmpl`. 
+创建文件夹`/opt/tmp-2`和`/opt/tmp-2/tmpl`。创建文件`edit.html`，`view.html`，`wiki.go`。
 
-Create files [edit.html](../../assets/edit.html), [view.html](../../assets/view.html), [wiki.go](../../assets/wiki.go) and structure likes below.
+文件结构如下：
 
-```
+```bash
 tree -l /opt/tmp-2
 ```
 
-```
+输出结果：
+
+```bash
 .
 ├── tmpl
 │   ├── edit.html
@@ -1023,13 +995,15 @@ tree -l /opt/tmp-2
 └── wiki.go
 ```
 
-Create an new Dockerfile that starts 
+创建一个新的Dockerfile。 
 
-```console
+```bash
 cat Dockerfile
 ```
 
-```
+文件内容：
+
+```console
 # app builder stage
 FROM golang:1.12-alpine as builder
 
@@ -1059,23 +1033,23 @@ EXPOSE 8080
 CMD ["/app/wiki"]
 ```
 
-Build the images by Dockerfile we created above.
+用上一步创建的Dockerfile来创建新景象。
 
-```console
+```bash
 docker build -t lizard/golang:my1 /opt/tmp-2/
 ```
 
-Run the image in detached mode, create a port forwarding from port 8080 in the container to port 1090 on the host.
+以独立模式（detached）运行这个镜像，并将容器端口`8080`转发到主机端口`1090`。
 
-```console
+```bash
 docker run -d -p 1090:8080 --name golan_v1 lizard/golang:my1
 ```
 
-Access the container via link http://localhost:1090
+通过链接 http://localhost:1090 访问这个运行的容器。
 
-Tab the golang image we created and push it to DockerHub.
+对我们刚刚创建的新的golang镜像进行标签，并且上传到Dockerhub。
 
-```console
+```bash
 docker tag lizard/golang:my1 <your acccount id>/golang_0001:v1
 docker push <your acccount id>/golang_0001:v1
 ```
