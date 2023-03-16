@@ -2,65 +2,61 @@
 
 ## Kubernetes基本概念
 
-### Kubernetes Components
+### Kubernetes组件
 
-A Kubernetes cluster consists of the components that represent the **control plane** and a set of machines called **nodes**.
+一个Kubernetes集群由代表控制平面（control plane）的组件和一组称为节点（nodes）的机器组成。
 
 ![The components of a Kubernetes cluster](https://d33wubrfki0l68.cloudfront.net/2475489eaf20163ec0f54ddc1d92aa8d4c87c96b/e7c81/images/docs/components-of-kubernetes.svg)
 
+**Kubernetes组件**: 
 
-**Kubernetes Components**: 
+* 控制平面组件 Control Plane Components
+  * kube-apiserver: 
+    * 查询和操作 Kubernetes 中对象的状态。
+    * 充当所有资源之间的通信中心（communication hub）。
+    * 提供集群安全身份验证、授权和角色分配。
+    * 是唯一能连接到 etcd 的组件。
+  * etcd: 
+    * 所有 Kubernetes 对象都存储在 `etcd` 中。
+    * Kubernetes 对象是 Kubernetes 系统中的持久实体(entities)，用于表示集群的状态。
+  * kube-scheduler: 
+    * 监视没有分配节点的新创建的 Pod，并为它们选择一个节点来运行。
+  * kube-controller-manager: 
+    * 运行控制器进程。
+    * *Node controller*: 负责警示和响应节点的故障。
+    * *Job controller*: 监视表示一次性任务的 Job 对象，然后创建 Pod 来完成这些任务。
+    * *Endpoints controller*: 填充 Endpoints 对象（即将 Service 和 Pod 连接起来）。
+    * *Service Account & Token controllers*: 为新命名空间创建默认帐户和 API 访问令牌。
+  * cloud-controller-manager: 
+    * 嵌入云特定的控制逻辑，仅运行特定于我们选择的云提供商的控制器，无需自己的基础设施和学习环境。
+    * *Node controller*: 用于检查云提供商，以确定节点在在它停止响应后是否已在云中被删除。
+    * *Route controller*: 用于在底层云基础架构中设置路由。
+    * *Service controller*: 用于创建、更新和删除云提供商负载均衡器。
+* 节点组件 Node Components
+  * kubelet: 
+    * 在集群中每个节点上运行的代理。 
+    * 管理节点。它确保 Pod 中运行容器。`kubelet` 向 APIServer 注册和更新节点信息，APIServer 将它们存储到 `etcd` 中。
+    * 管理 Pod。通过 APIServer 监视 Pod，并对 Pod 或 Pod 中的容器采取行动。
+    * 在容器级别进行健康检查。
+  * kube-proxy: 
+    * 是在集群中每个节点上运行的网络代理。
+      * iptables
+      * ipvs
+    * 维护节点上的网络规则。
+  * 容器运行时Container runtime：
+    * 负责运行容器的软件。
+* 插件Addons
+  * DNS: 是 DNS 服务器，是所有 Kubernetes 集群所必需的。
+  * Web UI（仪表盘）：用于 Kubernetes 集群的基于 Web 的用户界面。
+  * 容器资源监控：记录有关集中式数据库中容器的通用时间序列度量。
+  * Cluster-level Logging：负责将容器日志保存到具有搜索/浏览接口的中央日志存储中。
 
-* Control Plane Components
-    * kube-apiserver: 
-        * query and manipulate the state of objects in Kubernetes.
-        * play as "communication hub" among all resources in cluster.
-        * provide cluster security authentication, authorization, and role assignment.
-        * the only one can connect to `etcd`.
-    * etcd: 
-        * all Kubernetes objects are stored on etcd. 
-        * Kubernetes objects are persistent **entities** in the Kubernetes system, which are used to represent the state of your cluster.
-    * kube-scheduler: 
-        * watches for newly created Pods with no assigned node, and selects a node for them to run on.
-    * kube-controller-manager: runs controller processes.
-        * *Node controller*: Responsible for noticing and responding when nodes go down.
-        * *Job controller*: Watches for Job objects that represent one-off tasks, then creates Pods to run those tasks to completion.
-        * *Endpoints controller*: Populates the Endpoints object (that is, joins Services & Pods).
-        * *Service Account & Token controllers*: Create default accounts and API access tokens for new namespaces.
-    * cloud-controller-manager: embeds cloud-specific control logic and only runs controllers that are specific to your cloud provider, no need for own premises and learning environment.
-        * *Node controller*: For checking the cloud provider to determine if a node has been deleted in the cloud after it stops responding
-        * *Route controller*: For setting up routes in the underlying cloud infrastructure
-        * *Service controller*: For creating, updating and deleting cloud provider load balancers
-* Node Components
-    * kubelet: 
-        * An agent that runs on each node in the cluster. 
-        * Manage node. It makes sure that containers are running in a Pod. `kubelet` registers and updates nodes information to APIServer, and APIServer stores them into `etcd`.
-        * Manage pod. Watch pod via APIServer, and action on pods or containers in pods.
-        * Health check at container level.
-    * kube-proxy: 
-        * is a network proxy that runs on each node in cluster.
-            * iptables
-            * ipvs
-        * maintains network rules on nodes.
-    * Container runtime: 
-        * is the software that is responsible for running containers.
-* Addons
-    * DNS: is a DNS server and required by all Kubernetes clusters.
-    * Web UI (Dashboard): web-based UI for Kubernetes clusters. 
-    * Container Resource Monitoring: records generic time-series metrics about containers in a central database
-    * Cluster-level Logging: is responsible for saving container logs to a central log store with search/browsing interface.
+可扩展性：
 
+- 水平扩展（Scaling out）通过添加更多的服务器到架构中，将工作负载分散到更多的机器上。
+- 垂直扩展（Scaling up）通过添加更多的硬盘和内存来增加物理服务器的计算能力。
 
-Scalability:
-
-* **Scaling out** (horizontal scaling) by adding more servers to your architecture to spread the workload across more machines.
-* **Scaling up** (vertical scaling) by adding more hard drives and memory to increase the computing capacity of physical servers. 
-
-
-
-
-
-### Kubernetes API 
+### Kubernetes API
 
 The REST API is the fundamental fabric of Kubernetes. 
 All operations and communications between components, and external user commands are REST API calls that the API Server handles. 
@@ -79,14 +75,12 @@ The Kubernetes API lets we query and manipulate the state of API objects in Kube
 Kubernetes API:
 
 * OpenAPI specification
-    * OpenAPI V2
-    * OpenAPI V3
+  * OpenAPI V2
+  * OpenAPI V3
 * Persistence. Kubernetes stores the serialized state of objects by writing them into etcd.
 * API groups and versioning. Versioning is done at the API level. API resources are distinguished by their API group, resource type, namespace (for namespaced resources), and name.
-    * API changes
+  * API changes
 * API Extension
-
-
 
 #### API Version
 
@@ -97,24 +91,24 @@ Different API versions indicate different levels of stability and support.
 Here's a summary of each level:
 
 * Alpha:
-    * The version names contain alpha (for example, v1alpha1).
-    * The software may contain bugs. Enabling a feature may expose bugs. A feature may be disabled by default.
-    * The support for a feature may be dropped at any time without notice.
-    * The API may change in incompatible ways in a later software release without notice.
-    * The software is recommended for use only in short-lived testing clusters, due to increased risk of bugs and lack of long-term support.
+  * The version names contain alpha (for example, v1alpha1).
+  * The software may contain bugs. Enabling a feature may expose bugs. A feature may be disabled by default.
+  * The support for a feature may be dropped at any time without notice.
+  * The API may change in incompatible ways in a later software release without notice.
+  * The software is recommended for use only in short-lived testing clusters, due to increased risk of bugs and lack of long-term support.
 * Beta:
-    * The version names contain beta (for example, v2beta3).
-    * The software is well tested. Enabling a feature is considered safe. Features are enabled by default.
-    * The support for a feature will not be dropped, though the details may change.
-    * The schema and/or semantics of objects may change in incompatible ways in a subsequent beta or stable release. When this happens, migration instructions are provided. Schema changes may require deleting, editing, and re-creating API objects. The editing process may not be straightforward. The migration may require downtime for applications that rely on the feature.
-    * The software is not recommended for production uses. Subsequent releases may introduce incompatible changes. If you have multiple clusters which can be upgraded independently, you may be able to relax this restriction.
-      Note: Please try beta features and provide feedback. After the features exit beta, it may not be practical to make more changes.
+  * The version names contain beta (for example, v2beta3).
+  * The software is well tested. Enabling a feature is considered safe. Features are enabled by default.
+  * The support for a feature will not be dropped, though the details may change.
+  * The schema and/or semantics of objects may change in incompatible ways in a subsequent beta or stable release. When this happens, migration instructions are provided. Schema changes may require deleting, editing, and re-creating API objects. The editing process may not be straightforward. The migration may require downtime for applications that rely on the feature.
+  * The software is not recommended for production uses. Subsequent releases may introduce incompatible changes. If you have multiple clusters which can be upgraded independently, you may be able to relax this restriction.
+    Note: Please try beta features and provide feedback. After the features exit beta, it may not be practical to make more changes.
 * Stable:
-    * The version name is vX where X is an integer.
-    * The stable versions of features appear in released software for many subsequent versions.
-
+  * The version name is vX where X is an integer.
+  * The stable versions of features appear in released software for many subsequent versions.
 
 Command to get current API
+
 ```
 kubectl api-resources
 ```
@@ -127,28 +121,20 @@ The API group is specified in a REST path and in the apiVersion field of a seria
 There are several API groups in Kubernetes:
 
 * The core (also called legacy) group is found at REST path `/api/v1`. 
-    * The core group is not specified as part of the apiVersion field, for example, apiVersion: v1.
+  * The core group is not specified as part of the apiVersion field, for example, apiVersion: v1.
 * The named groups are at REST path `/apis/$GROUP_NAME/$VERSION` and use apiVersion: `$GROUP_NAME/$VERSION` (for example, apiVersion: batch/v1). 
-
-
-
-
-
-
-
-
-
 
 ### Kubernetes Objects
 
 #### Objects Overview:
 
 * Object Spec:
-    * providing a description of the characteristics the resource created to have: *its desired state*.
+  * providing a description of the characteristics the resource created to have: *its desired state*.
 * Object Status:
-    * describes the current state of the object.
+  * describes the current state of the object.
 
 Example of Deployment as an object that can represent an application running on cluster.
+
 ```
 apiVersion: apps/v1  # Which version of the Kubernetes API you're using to create this object
 kind: Deployment     # What kind of object you want to create
@@ -171,7 +157,6 @@ spec:                # What state you desire for the object
         - containerPort: 80
 ```
 
-
 #### Object Management:
 
 The `kubectl` command-line tool supports several different ways to create and manage Kubernetes objects. Read the [Kubectl book](https://kubectl.docs.kubernetes.io/) for details.
@@ -181,19 +166,15 @@ A Kubernetes object should be managed using ONLY one technique. Mixing and match
 Three management techniques:
 
 * Imperative commands
-    * operates directly on live objects in a cluster. 
-    * `kubectl create deployment nginx --image nginx`
+  * operates directly on live objects in a cluster. 
+  * `kubectl create deployment nginx --image nginx`
 * Imperative object configuration
-    * `kubectl create -f nginx.yaml`
-    * `kubectl delete -f nginx.yaml -f redis.yaml`
-    * `kubectl replace -f nginx.yaml`
+  * `kubectl create -f nginx.yaml`
+  * `kubectl delete -f nginx.yaml -f redis.yaml`
+  * `kubectl replace -f nginx.yaml`
 * Declarative object configuration
-    * `kubectl diff -f configs/`
-    * `kubectl apply -f configs/`
-
-
-
-
+  * `kubectl diff -f configs/`
+  * `kubectl apply -f configs/`
 
 #### Object Names and IDs
 
@@ -205,10 +186,6 @@ Each object in your cluster has a *Name* that is unique for that type of resourc
 
 Every Kubernetes object also has a *UID* that is unique across the whole cluster.
 
-
-
-
-
 #### Namespaces
 
 In Kubernetes, namespaces provides a mechanism for isolating groups of resources within a single cluster. 
@@ -218,7 +195,6 @@ Names of resources need to be unique within a namespace, but not across namespac
 Namespace-based scoping is applicable only for namespaced objects (e.g. Deployments, Services, etc) and not for cluster-wide objects (e.g. StorageClass, Nodes, PersistentVolumes, etc)
 
 Not All Objects are in a Namespace.
-
 
 Kubernetes starts with four initial namespaces:
 
@@ -232,7 +208,6 @@ Kubernetes starts with four initial namespaces:
     The public aspect of this namespace is only a convention, not a requirement.
 * `kube-node-lease` This namespace holds Lease objects associated with each node. Node leases allow the kubelet to send heartbeats so that the control plane can detect node failure.
 
-
 Viewing namespaces: 
 
 * `kubectl get namespace`
@@ -241,11 +216,6 @@ Setting the namespace for a request
 
 * `kubectl run nginx --image=nginx --namespace=<insert-namespace-name-here>`
 * `kubectl get pods --namespace=<insert-namespace-name-here>`
-
-
-
-
-
 
 #### Labels and Selectors
 
@@ -260,6 +230,7 @@ Each object can have a set of key/value labels defined.
 Each Key must be unique for a given object.
 
 Example of labels:
+
 ```
 "metadata": {
     "labels": {
@@ -269,7 +240,6 @@ Example of labels:
 }
 ```
 
-
 Unlike names and UIDs, labels do not provide uniqueness. In general, we expect many objects to carry the same label(s).
 
 The API currently supports two types of selectors: 
@@ -278,16 +248,13 @@ The API currently supports two types of selectors:
 * set-based, e.g., `environment in (production, qa)`, `tier notin (frontend, backend)`
 
 Sample commands:
+
 ```
 kubectl get pods -l environment=production,tier=frontend
 kubectl get pods -l 'environment in (production),tier in (frontend)'
 kubectl get pods -l 'environment in (production, qa)'
 kubectl get pods -l 'environment,environment notin (frontend)'
 ```
-
-
-
-
 
 #### Annotations
 
@@ -299,8 +266,8 @@ Use either labels or annotations to attach metadata to Kubernetes objects.
 * Labels can be used to select objects and to find collections of objects that satisfy certain conditions. 
 * Annotations are not used to identify and select objects. 
 
-
 Annotations, like labels, are key/value maps. The keys and the values in the map must be strings. 
+
 ```
 "metadata": {
     "annotations": {
@@ -312,16 +279,12 @@ Annotations, like labels, are key/value maps. The keys and the values in the map
 
 Valid annotation keys have two segments: an optional prefix and name, separated by a slash (`/`). 
 
-
-
-
-
-
 #### Field Selectors
 
 Field selectors let you select Kubernetes resources based on the value of one or more resource fields. 
 
 Here are some examples of field selector queries:
+
 ```
 metadata.name=my-service
 metadata.namespace!=default
@@ -330,7 +293,6 @@ status.phase=Pending
 
 This kubectl command selects all Pods for which the value of the status.phase field is Running:
 `kubectl get pods --field-selector status.phase=Running`
-
 
 Supported field selectors vary by Kubernetes resource type. All resource types support the `metadata.name` and `metadata.namespace` fields. 
 
@@ -349,11 +311,6 @@ Chained selectors,
 Multiple resource types, 
 `kubectl get statefulsets,services --all-namespaces --field-selector metadata.namespace!=default`
 
-
-
-
-
-
 #### Finalizers
 
 Finalizers are *namespaced keys* that tell Kubernetes to wait until specific conditions are met before it fully deletes resources marked for *deletion*. 
@@ -367,7 +324,6 @@ Kubernetes uses the owner references (not labels) to determine which Pods in the
 
 Kubernetes processes finalizers when it identifies owner references on a resource targeted for deletion.
 
-
 #### Owners and Dependents
 
 In Kubernetes, some objects are owners of other objects. For example, a ReplicaSet is the owner of a set of Pods. 
@@ -379,10 +335,6 @@ A valid owner reference consists of the object name and a UID within the same na
 
 Dependent objects also have an `ownerReferences.blockOwnerDeletion` field that takes a boolean value and controls whether specific dependents can block garbage collection from deleting their owner object. 
 
-
-
-
-
 ### Resource
 
 Kubernetes resources and "records of intent" are all stored as API objects, and modified via RESTful calls to the API. 
@@ -391,89 +343,86 @@ Users can interact with the Kubernetes API directly, or via tools like kubectl.
 The core Kubernetes API is flexible and can also be extended to support custom resources.
 
 * Workload Resources
-    * *Pod*. Pod is a collection of containers that can run on a host.
-    * *PodTemplate*. PodTemplate describes a template for creating copies of a predefined pod.
-    * *ReplicationController*. ReplicationController represents the configuration of a replication controller.
-    * *ReplicaSet*. ReplicaSet ensures that a specified number of pod replicas are running at any given time.
-    * *Deployment*. Deployment enables declarative updates for Pods and ReplicaSets.
-    * *StatefulSet*. StatefulSet represents a set of pods with consistent identities.
-    * *ControllerRevision*. ControllerRevision implements an immutable snapshot of state data.
-    * *DaemonSet*. DaemonSet represents the configuration of a daemon set.
-    * *Job*. Job represents the configuration of a single job.
-    * *CronJob*. CronJob represents the configuration of a single cron job.
-    * *HorizontalPodAutoscaler*. configuration of a horizontal pod autoscaler.
-    * *HorizontalPodAutoscaler*. HorizontalPodAutoscaler is the configuration for a horizontal pod autoscaler, which automatically manages the replica count of any resource implementing the scale subresource based on the metrics specified.
-    * *HorizontalPodAutoscaler v2beta2*. HorizontalPodAutoscaler is the configuration for a horizontal pod autoscaler, which automatically manages the replica count of any resource implementing the scale subresource based on the metrics specified.
-    * *PriorityClass*. PriorityClass defines mapping from a priority class name to the priority integer value.
+  * *Pod*. Pod is a collection of containers that can run on a host.
+  * *PodTemplate*. PodTemplate describes a template for creating copies of a predefined pod.
+  * *ReplicationController*. ReplicationController represents the configuration of a replication controller.
+  * *ReplicaSet*. ReplicaSet ensures that a specified number of pod replicas are running at any given time.
+  * *Deployment*. Deployment enables declarative updates for Pods and ReplicaSets.
+  * *StatefulSet*. StatefulSet represents a set of pods with consistent identities.
+  * *ControllerRevision*. ControllerRevision implements an immutable snapshot of state data.
+  * *DaemonSet*. DaemonSet represents the configuration of a daemon set.
+  * *Job*. Job represents the configuration of a single job.
+  * *CronJob*. CronJob represents the configuration of a single cron job.
+  * *HorizontalPodAutoscaler*. configuration of a horizontal pod autoscaler.
+  * *HorizontalPodAutoscaler*. HorizontalPodAutoscaler is the configuration for a horizontal pod autoscaler, which automatically manages the replica count of any resource implementing the scale subresource based on the metrics specified.
+  * *HorizontalPodAutoscaler v2beta2*. HorizontalPodAutoscaler is the configuration for a horizontal pod autoscaler, which automatically manages the replica count of any resource implementing the scale subresource based on the metrics specified.
+  * *PriorityClass*. PriorityClass defines mapping from a priority class name to the priority integer value.
 * Service Resources
-    * *Service*. Service is a named abstraction of software service (for example, mysql) consisting of local port (for example 3306) that the proxy listens on, and the selector that determines which pods will answer requests sent through the proxy.
-    * *Endpoints*. Endpoints is a collection of endpoints that implement the actual service.
-    * *EndpointSlice*. EndpointSlice represents a subset of the endpoints that implement a service.
-    * *Ingress*. Ingress is a collection of rules that allow inbound connections to reach the endpoints defined by a backend.
-    * *IngressClass*. IngressClass represents the class of the Ingress, referenced by the Ingress Spec.
+  * *Service*. Service is a named abstraction of software service (for example, mysql) consisting of local port (for example 3306) that the proxy listens on, and the selector that determines which pods will answer requests sent through the proxy.
+  * *Endpoints*. Endpoints is a collection of endpoints that implement the actual service.
+  * *EndpointSlice*. EndpointSlice represents a subset of the endpoints that implement a service.
+  * *Ingress*. Ingress is a collection of rules that allow inbound connections to reach the endpoints defined by a backend.
+  * *IngressClass*. IngressClass represents the class of the Ingress, referenced by the Ingress Spec.
 * Config and Storage Resources
-    * *ConfigMap*. ConfigMap holds configuration data for pods to consume.
-    * *Secret*. Secret holds secret data of a certain type.
-    * *Volume*. Volume represents a named volume in a pod that may be accessed by any container in the pod.
-    * *PersistentVolumeClaim*. PersistentVolumeClaim is a user's request for and claim to a persistent volume.
-    * *PersistentVolume*. PersistentVolume (PV) is a storage resource provisioned by an administrator.
-    * *StorageClass*. StorageClass describes the parameters for a class of storage for which PersistentVolumes can be dynamically provisioned.
-    * *VolumeAttachment*. VolumeAttachment captures the intent to attach or detach the specified volume to/from the specified node.
-    * *CSIDriver*. CSIDriver captures information about a Container Storage Interface (CSI) volume driver deployed on the cluster.
-    * *CSINode*. CSINode holds information about all CSI drivers installed on a node.
-    * *CSIStorageCapacity*. CSIStorageCapacity stores the result of one CSI GetCapacity call.
+  * *ConfigMap*. ConfigMap holds configuration data for pods to consume.
+  * *Secret*. Secret holds secret data of a certain type.
+  * *Volume*. Volume represents a named volume in a pod that may be accessed by any container in the pod.
+  * *PersistentVolumeClaim*. PersistentVolumeClaim is a user's request for and claim to a persistent volume.
+  * *PersistentVolume*. PersistentVolume (PV) is a storage resource provisioned by an administrator.
+  * *StorageClass*. StorageClass describes the parameters for a class of storage for which PersistentVolumes can be dynamically provisioned.
+  * *VolumeAttachment*. VolumeAttachment captures the intent to attach or detach the specified volume to/from the specified node.
+  * *CSIDriver*. CSIDriver captures information about a Container Storage Interface (CSI) volume driver deployed on the cluster.
+  * *CSINode*. CSINode holds information about all CSI drivers installed on a node.
+  * *CSIStorageCapacity*. CSIStorageCapacity stores the result of one CSI GetCapacity call.
 * Authentication Resources
-    * *ServiceAccount*. ServiceAccount binds together: 
-        * a name, understood by users, and perhaps by peripheral systems, for an identity 
-        * a principal that can be authenticated and authorized 
-        * a set of secrets.
-    * *TokenRequest*. TokenRequest requests a token for a given service account.
-    * *TokenReview*. TokenReview attempts to authenticate a token to a known user.
-    * *CertificateSigningRequest*. CertificateSigningRequest objects provide a mechanism to obtain x509 certificates by submitting a certificate signing request, and having it asynchronously approved and issued.
+  * *ServiceAccount*. ServiceAccount binds together: 
+    * a name, understood by users, and perhaps by peripheral systems, for an identity 
+    * a principal that can be authenticated and authorized 
+    * a set of secrets.
+  * *TokenRequest*. TokenRequest requests a token for a given service account.
+  * *TokenReview*. TokenReview attempts to authenticate a token to a known user.
+  * *CertificateSigningRequest*. CertificateSigningRequest objects provide a mechanism to obtain x509 certificates by submitting a certificate signing request, and having it asynchronously approved and issued.
 * Authorization Resources
-    * *LocalSubjectAccessReview*. LocalSubjectAccessReview checks whether or not a user or group can perform an action in a given namespace.
-    * *SelfSubjectAccessReview*. SelfSubjectAccessReview checks whether or the current user can perform an action.
-    * *SelfSubjectRulesReview*. SelfSubjectRulesReview enumerates the set of actions the current user can perform within a namespace.
-    * *SubjectAccessReview*. SubjectAccessReview checks whether or not a user or group can perform an action.
-    * *ClusterRole*. ClusterRole is a cluster level, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding or ClusterRoleBinding.
-    * *ClusterRoleBinding*. ClusterRoleBinding references a ClusterRole, but not contain it.
-    * *Role*. Role is a namespaced, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding.
-    * *RoleBinding*. RoleBinding references a role, but does not contain it.
+  * *LocalSubjectAccessReview*. LocalSubjectAccessReview checks whether or not a user or group can perform an action in a given namespace.
+  * *SelfSubjectAccessReview*. SelfSubjectAccessReview checks whether or the current user can perform an action.
+  * *SelfSubjectRulesReview*. SelfSubjectRulesReview enumerates the set of actions the current user can perform within a namespace.
+  * *SubjectAccessReview*. SubjectAccessReview checks whether or not a user or group can perform an action.
+  * *ClusterRole*. ClusterRole is a cluster level, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding or ClusterRoleBinding.
+  * *ClusterRoleBinding*. ClusterRoleBinding references a ClusterRole, but not contain it.
+  * *Role*. Role is a namespaced, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding.
+  * *RoleBinding*. RoleBinding references a role, but does not contain it.
 * Policy Resources
-    * *LimitRange*. LimitRange sets resource usage limits for each kind of resource in a Namespace.
-    * *ResourceQuota*. ResourceQuota sets aggregate quota restrictions enforced per namespace.
-    * *NetworkPolicy*. NetworkPolicy describes what network traffic is allowed for a set of Pods.
-    * *PodDisruptionBudget*. PodDisruptionBudget is an object to define the max disruption that can be caused to a collection of pods.
-    * *PodSecurityPolicy v1beta1*. PodSecurityPolicy governs the ability to make requests that affect the Security Context that will be applied to a pod and container.
+  * *LimitRange*. LimitRange sets resource usage limits for each kind of resource in a Namespace.
+  * *ResourceQuota*. ResourceQuota sets aggregate quota restrictions enforced per namespace.
+  * *NetworkPolicy*. NetworkPolicy describes what network traffic is allowed for a set of Pods.
+  * *PodDisruptionBudget*. PodDisruptionBudget is an object to define the max disruption that can be caused to a collection of pods.
+  * *PodSecurityPolicy v1beta1*. PodSecurityPolicy governs the ability to make requests that affect the Security Context that will be applied to a pod and container.
 * Extend Resources
-    * *CustomResourceDefinition*. CustomResourceDefinition represents a resource that should be exposed on the API server.
-    * *MutatingWebhookConfiguration*. MutatingWebhookConfiguration describes the configuration of and admission webhook that accept or reject and may change the object.
-    * *ValidatingWebhookConfiguration(). ValidatingWebhookConfiguration describes the configuration of and admission webhook that accept or reject and object without changing it.
+  * *CustomResourceDefinition*. CustomResourceDefinition represents a resource that should be exposed on the API server.
+  * *MutatingWebhookConfiguration*. MutatingWebhookConfiguration describes the configuration of and admission webhook that accept or reject and may change the object.
+  * *ValidatingWebhookConfiguration(). ValidatingWebhookConfiguration describes the configuration of and admission webhook that accept or reject and object without changing it.
 * Cluster Resources
-    * *Node*. Node is a worker node in Kubernetes.
-    * *Namespace*. Namespace provides a scope for Names.
-    * *Event*. Event is a report of an event somewhere in the cluster.
-    * *APIService*. APIService represents a server for a particular GroupVersion.
-    * *Lease*. Lease defines a lease concept.
-    * *RuntimeClass*. RuntimeClass defines a class of container runtime supported in the cluster.
-    * *FlowSchema v1beta2*. FlowSchema defines the schema of a group of flows.
-    * *PriorityLevelConfiguration v1beta2*. PriorityLevelConfiguration represents the configuration of a priority level.
-    * *Binding*. Binding ties one object to another; for example, a pod is bound to a node by a scheduler.
-    * *ComponentStatus*. ComponentStatus (and ComponentStatusList) holds the cluster validation info.
-
+  * *Node*. Node is a worker node in Kubernetes.
+  * *Namespace*. Namespace provides a scope for Names.
+  * *Event*. Event is a report of an event somewhere in the cluster.
+  * *APIService*. APIService represents a server for a particular GroupVersion.
+  * *Lease*. Lease defines a lease concept.
+  * *RuntimeClass*. RuntimeClass defines a class of container runtime supported in the cluster.
+  * *FlowSchema v1beta2*. FlowSchema defines the schema of a group of flows.
+  * *PriorityLevelConfiguration v1beta2*. PriorityLevelConfiguration represents the configuration of a priority level.
+  * *Binding*. Binding ties one object to another; for example, a pod is bound to a node by a scheduler.
+  * *ComponentStatus*. ComponentStatus (and ComponentStatusList) holds the cluster validation info.
 
 Command `kube api-resources` to get the supported API resources.
 
-
 Command `kubectl explain RESOURCE [options]` describes the fields associated with each supported API resource. 
 Fields are identified via a simple JSONPath identifier:
+
 ```
 kubectl explain binding
 kubectl explain binding.metadata
 kubectl explain binding.metadata.name
 ```
-
-
 
 ## Workload Resources
 
@@ -536,16 +485,13 @@ A Pod persists until it is deleted.
 You can use workload resources (e.g., Deployment, StatefulSet, DaemonSet) to create and manage multiple Pods for you. 
 A controller for the resource handles replication and rollout and automatic healing in case of Pod failure.
 
-
 ![Pod with multiple containers](https://d33wubrfki0l68.cloudfront.net/aecab1f649bc640ebef1f05581bfcc91a48038c4/728d6/images/docs/pod.svg)
-
 
 #### InitContainer
 
 Some Pods have init containers as well as app containers. Init containers run and complete before the app containers are started.
 
 You can specify init containers in the Pod specification alongside the containers array (which describes app containers).
-
 
 #### Static Pod
 
@@ -557,7 +503,6 @@ The main use for static Pods is to run a self-hosted control plane: in other wor
 
 The kubelet automatically tries to create a mirror Pod on the Kubernetes API server for each static Pod. 
 This means that the Pods running on a node are visible on the API server, but cannot be controlled from there.
-
 
 #### Container probes
 
@@ -584,12 +529,7 @@ Types of probe:
 * *readinessProbe*. Indicates whether the container is ready to respond to requests.
 * *startupProbe*. Indicates whether the application within the container is started.
 
-
-
-
-
 ### Deployment
-
 
 ### ReplicaSet
 
@@ -601,8 +541,6 @@ You may never need to manipulate ReplicaSet objects: use a Deployment instead, a
 You can specify how many Pods should run concurrently by setting `replicaset.spec.replicas`. 
 The ReplicaSet will create/delete its Pods to match this number.
 If you do not specify `replicaset.spec.replicas`, then it defaults to `1`.
-
-
 
 ### StatefulSet
 
@@ -620,23 +558,16 @@ StatefulSet can be scalling by itsself, but Deployment need rely on ReplicaSet f
 
 Recommendation: reduce StatefulSet to 0 first instead of delete it directly.
 
-
 *headless* Service and *governing* Service:
 
 * Headless Service is a normal Kubernetes Service object that its spec.clusterIP is set to `None`.
 * When `spec.ServiceName` of StatefulSet is set to the headless Service name, the StatefulSet is now a governing Service.
-
 
 General procedure to create a StatefulSet: 
 
 * Create a StorageClass
 * Create Headless Service
 * Create StatefulSet based on above two.
-
-
-
-
-
 
 ### DaemonSet
 
@@ -671,37 +602,18 @@ We’ll use a `Deployment`/`ReplicaSet` for services, mostly stateless, where we
 but we care more about the number of copies of our pod is running, and we can scale those copies/replicas up or down. 
 Rolling updates would also be a benefit here.
 
-
 We’ll use a `DaemonSet` when a copy of our pod must be running on the specific nodes that we require. 
 Our daemon pod also needs to start before any of our other pods.
-
 
 A DaemonSet is a simple scalability strategy for background services. 
 When more eligible nodes are added to the cluster, the background service scales up. 
 When nodes are removed, it will automatically scale down.
 
-
-
-
-
-
-
-
-
 ### Job
-
-
-
-
 
 ### CronJob
 
-
-
-
-
 ## Service Resource
-
 
 ### Service
 
@@ -717,6 +629,7 @@ Type of service resource:
 * ExternalName: Acces will be trafficed to external service.
 
 Here is an example of yaml file to create a Service.
+
 ```
 apiVersion: v1
 kind: Service
@@ -762,9 +675,6 @@ External Traffic Policy:  Cluster
 Events:                   <none>
 ```
 
-
-
-
 Service `kube-dns` beyond Deployment `coredns` provides cluster DNS service in Kubernetes cluster. 
 
 Service registration:
@@ -773,7 +683,6 @@ Service registration:
 * Registration is Service based, not Pod based.
 * Cluster DNS (CoreDNS) is monitoring and discvering new service actively.
 * Service Name, IP, Port will be registered.
-
 
 Procedure of Service registration.
 
@@ -785,8 +694,6 @@ Procedure of Service registration.
 * Create DNS info.
 * kube-proxy fetch Service configration info.
 * Create IPSV rule.
-
-
 
 Procedure of Service discovery.
 
@@ -801,14 +708,12 @@ Procedure of Service discovery.
 * Put destination Pod's IP into the request's destination IP. 
 * The request arrives destination Pod.
 
-
-
-
 FQDN format: `<object-name>.<namespace>.svc.cluster.local`. We call `<object-name>` as unqualified name, or short name.
 Namespaces can segregate the cluster's address space. At the same time, it can also be used to implement access control and resource quotas.
 
 Get DNS configuration in a Pod. 
 The IP of nameserver is same with ClusterIP of kube-dns Service, which is well-known IP for request of DNS or service discovery.
+
 ```
 root@cka001:/etc# kubectl get service kube-dns -n kube-system
 NAME       TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE
@@ -822,8 +727,8 @@ nameserver 10.96.0.10
 options ndots:5
 ```
 
-
 Get information of `kube-dns`.
+
 ```
 root@cka001:~# kubectl describe service kube-dns -n kube-system
 Name:              kube-dns
@@ -852,28 +757,13 @@ Session Affinity:  None
 Events:            <none>
 ```
 
-
-
-
-
-
-
-
-
-### Endpoints 
+### Endpoints
 
 Endpoints is a collection of endpoints that implement the actual service.
 
 When a service is created, it associates with a Endpoint object, `kubectl get endpoints <service_name>`.
 
 A list of matched Pod by service label is maintained as Endpoint object, add new matched Pods and remove not matched Pods.
-
-
-
-
-
-
-
 
 ## Config and Storage Resources
 
@@ -891,17 +781,11 @@ When a Pod is removed from a node for any reason, the data in the `emptyDir` is 
 
 A container crashing does not remove a Pod from a node. The data in an `emptyDir` volume is safe across container crashes.
 
-
 Usage:
 
 * scratch space, such as for a disk-based merge sort
 * checkpointing a long computation for recovery from crashes
 * holding files that a content-manager container fetches while a webserver container serves the data
-
-
-
-
-
 
 #### hostPath
 
@@ -913,7 +797,6 @@ When a HostPath volume MUST be used, it should be scoped to only the required fi
 
 If restricting HostPath access to specific directories through AdmissionPolicy, volumeMounts MUST be required to use readOnly mounts for the policy to be effective.
 
-
 Usage: 
 
 * Running together with DaemonSet, e.g., EFK Fluentd mount log directory of local host in order to collect host log information.
@@ -922,12 +805,8 @@ Usage:
 * Running cAdvisor in a container; use a hostPath of `/sys`.
 * Allowing a Pod to specify whether a given hostPath should exist prior to the Pod running, whether it should be created, and what it should exist as.
 
-
-
-
-
-
 ### Storage Class
+
 Procedure of StorageClass deployment and implementation:
 
 * Create Kubernetes cluster and backend storage.
@@ -935,8 +814,6 @@ Procedure of StorageClass deployment and implementation:
 * Create a StorageClass object to link to backend storage. The StorageClass will create related PV automatically.
 * Create a PVC object to link to the StorageClass we created.
 * Deploy a Pod and use the PVC volume.
-
-
 
 ### PV
 
@@ -946,7 +823,6 @@ PV Recycle Policy.
 * Delete.
 * Recycle. 
 
-
 PV in-tree type:
 
 * hostPath
@@ -954,8 +830,8 @@ PV in-tree type:
 * NFS
 * CSI
 
-
 ### Access Modes
+
 `spec.accessModes` defines mount option of a PV:
 
 * ReadWriteOnce(RWO). A PV can be mounted only to a PVC with read/write mode, like block device.
@@ -964,15 +840,3 @@ PV in-tree type:
 * ReadWriteOncePod (RWOP). Only support CSI type PV, can be mounted by single Pod.
 
 A PV can only be set with one option. Pod mount PVC, not PV.
-
-
-
-
-
-
-
-
-
-
-
-
