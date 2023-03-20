@@ -1,4 +1,4 @@
-# CKA自学笔记5:Kubernetes基本概念散记
+# CKA自学笔记5:Kubernetes随笔
 
 ## Kubernetes基本概念
 
@@ -80,8 +80,6 @@ Kubernetes API：
   - API更改
 - API扩展
 
-
-
 #### API Version
 
 API版本和软件版本间存在间接关系。API和发布版本计划描述了API版本和软件版本之间的关系。不同的API版本表示不同的稳定性和支持级别。
@@ -121,8 +119,6 @@ Kubernetes有几个API组：
   - 核心组不作为apiVersion字段的一部分指定，例如 apiVersion: v1。
 - 命名组位于REST路径 `/apis/$GROUP_NAME/$VERSION`，并使用 apiVersion: `$GROUP_NAME/$VERSION`（例如 apiVersion: batch/v1）。
 
-
-
 ### Kubernetes对象
 
 #### 对象概述
@@ -134,8 +130,6 @@ Kubernetes有几个API组：
 对象状态（Object Status）：
 
 - 描述了对象的当前状态。
-
-
 
 比如，Deployment是一个可以代表集群上运行的应用程序的对象。
 
@@ -180,8 +174,6 @@ spec:                # 期望所创建对象的状态
   - `kubectl diff -f configs/`
   - `kubectl apply -f configs/`
 
-
-
 #### 对象名称和ID
 
 集群中的每个对象都有一个在该资源类型中唯一的名称。
@@ -217,10 +209,6 @@ Kubernetes从四个初始命名空间开始：
 
 - `kubectl run nginx --image=nginx --namespace=<插入命名空间名称>`
 - `kubectl get pods --namespace=<插入命名空间名称>`
-
-
-
-
 
 #### 标签和选择器
 
@@ -334,43 +322,45 @@ Kubernetes使用所有者引用（而不是标签）来确定集群中哪些Pod�
 
 #### 所有者和依赖关系
 
-In Kubernetes, some objects are owners of other objects. For example, a ReplicaSet is the owner of a set of Pods. 
-These owned objects are dependents of their owner.
+在 Kubernetes 中，一些对象拥有其他对象。例如，ReplicaSet 是一组 Pod 的所有者。这些被拥有的对象是其所有者的从属对象。
 
-Dependent objects have a `metadata.ownerReferences` field that references their owner object.
+从属对象具有一个 `metadata.ownerReferences` 字段，该字段引用其所有者对象。
 
-A valid owner reference consists of the object name and a UID within the same namespace as the dependent object.
+有效的所有者引用包括对象名称和与从属对象相同的命名空间中的 UID。
 
-Dependent objects also have an `ownerReferences.blockOwnerDeletion` field that takes a boolean value and controls whether specific dependents can block garbage collection from deleting their owner object. 
+从属对象还具有一个 `ownerReferences.blockOwnerDeletion` 字段，该字段具有布尔值，控制特定的从属对象是否可以阻止垃圾回收删除其所有者对象。
 
-### Resource
+### 资源
 
-Kubernetes resources and "records of intent" are all stored as API objects, and modified via RESTful calls to the API. 
-The API allows configuration to be managed in a declarative way. 
-Users can interact with the Kubernetes API directly, or via tools like kubectl. 
-The core Kubernetes API is flexible and can also be extended to support custom resources.
+Kubernetes资源和“意向记录”都以API对象的形式存储，并通过对API的RESTful调用进行修改。
 
-* Workload Resources
-  * *Pod*. Pod is a collection of containers that can run on a host.
-  * *PodTemplate*. PodTemplate describes a template for creating copies of a predefined pod.
-  * *ReplicationController*. ReplicationController represents the configuration of a replication controller.
-  * *ReplicaSet*. ReplicaSet ensures that a specified number of pod replicas are running at any given time.
-  * *Deployment*. Deployment enables declarative updates for Pods and ReplicaSets.
-  * *StatefulSet*. StatefulSet represents a set of pods with consistent identities.
-  * *ControllerRevision*. ControllerRevision implements an immutable snapshot of state data.
-  * *DaemonSet*. DaemonSet represents the configuration of a daemon set.
-  * *Job*. Job represents the configuration of a single job.
-  * *CronJob*. CronJob represents the configuration of a single cron job.
-  * *HorizontalPodAutoscaler*. configuration of a horizontal pod autoscaler.
-  * *HorizontalPodAutoscaler*. HorizontalPodAutoscaler is the configuration for a horizontal pod autoscaler, which automatically manages the replica count of any resource implementing the scale subresource based on the metrics specified.
-  * *HorizontalPodAutoscaler v2beta2*. HorizontalPodAutoscaler is the configuration for a horizontal pod autoscaler, which automatically manages the replica count of any resource implementing the scale subresource based on the metrics specified.
-  * *PriorityClass*. PriorityClass defines mapping from a priority class name to the priority integer value.
-* Service Resources
-  * *Service*. Service is a named abstraction of software service (for example, mysql) consisting of local port (for example 3306) that the proxy listens on, and the selector that determines which pods will answer requests sent through the proxy.
-  * *Endpoints*. Endpoints is a collection of endpoints that implement the actual service.
-  * *EndpointSlice*. EndpointSlice represents a subset of the endpoints that implement a service.
-  * *Ingress*. Ingress is a collection of rules that allow inbound connections to reach the endpoints defined by a backend.
-  * *IngressClass*. IngressClass represents the class of the Ingress, referenced by the Ingress Spec.
+API允许以声明性方式管理配置。
+
+用户可以直接与Kubernetes
+ API交互，也可以通过像kubectl这样的工具进行交互。
+
+核心Kubernetes API具有灵活性，也可以扩展以支持自定义资源。
+
+* 工作负载资源（Workload Resources）
+  - *Pod*。Pod 是可以在主机上运行的容器集合。
+  - *PodTemplate*。PodTemplate 描述了预定义 pod 的副本模板。
+  - *ReplicationController*。ReplicationController 表示一个复制控制器的配置。
+  - *ReplicaSet*。ReplicaSet 确保在任何给定时间有指定数量的 pod 副本正在运行。
+  - *Deployment*。Deployment 使 Pod 和 ReplicaSet 的声明性更新成为可能。
+  - *StatefulSet*。StatefulSet 表示具有一致标识的 pod 集合。
+  - *ControllerRevision*。ControllerRevision 实现了状态数据的不可变快照。
+  - *DaemonSet*。DaemonSet 表示一个守护进程集的配置。
+  - *Job*。Job 表示单个 job 的配置。
+  - *CronJob*。CronJob 表示单个 cron job 的配置。
+  - *HorizontalPodAutoscaler*。HorizontalPodAutoscaler 表示水平 pod 自动缩放器的配置。
+  - *HorizontalPodAutoscaler v2beta2*。HorizontalPodAutoscaler 是水平 pod 自动缩放器的配置，根据指定的指标自动管理实现比例子资源的任何资源的副本计数。
+  - *PriorityClass*。PriorityClass 定义了从优先级类名称到优先级整数值的映射。
+* 服务资源（Service Resources）
+  - *Service*. Service 是对软件服务（例如mysql）的命名抽象，由代理监听的本地端口（例如3306）和确定哪些Pod将回答通过代理发送的请求的选择器组成。
+  - *Endpoints*. Endpoints 是实现实际服务的一组终结点。
+  - *EndpointSlice*. EndpointSlice 表示实现服务的终结点的子集。
+  - *Ingress*. Ingress 是一组规则，允许入站连接到达由后端定义的终结点。
+  - *IngressClass*. IngressClass 表示 Ingress 的类，由 Ingress Spec 引用。
 * Config and Storage Resources
   * *ConfigMap*. ConfigMap holds configuration data for pods to consume.
   * *Secret*. Secret holds secret data of a certain type.
