@@ -58,93 +58,97 @@
 
 ### Kubernetes API
 
-The REST API is the fundamental fabric of Kubernetes. 
-All operations and communications between components, and external user commands are REST API calls that the API Server handles. 
-Consequently, everything in the Kubernetes platform is treated as an *API object* and has a corresponding entry in the API.
+REST API是Kubernetes的基本框架。所有组件之间的操作和通信，以及外部用户命令都是由API服务器处理的REST API调用。因此，Kubernetes平台中的所有内容都被视为API对象（API object），并在API中有相应的条目。
 
-The core of Kubernetes' control plane is the API server. 
+Kubernetes控制平面的核心是API服务器。
 
-* CRI: Container Runtime Interface
-* CNI: Container Network Interface
-* CSI: Container Storage Interface
+- CRI：容器运行时接口
+- CNI：容器网络接口
+- CSI：容器存储接口
 
-The API server exposes an HTTP API that lets end users, different parts of cluster, and external components communicate with one another.
+API服务器公开了一个HTTP API，允许最终用户、集群的不同部分和外部组件彼此通信。
 
-The Kubernetes API lets we query and manipulate the state of API objects in Kubernetes (for example: Pods, Namespaces, ConfigMaps, and Events).
+Kubernetes API允许我们查询和操作Kubernetes中API对象的状态（例如：Pod、Namespace、ConfigMap和Event）。
 
-Kubernetes API:
+Kubernetes API：
 
-* OpenAPI specification
-  * OpenAPI V2
-  * OpenAPI V3
-* Persistence. Kubernetes stores the serialized state of objects by writing them into etcd.
-* API groups and versioning. Versioning is done at the API level. API resources are distinguished by their API group, resource type, namespace (for namespaced resources), and name.
-  * API changes
-* API Extension
+- OpenAPI规范
+  - OpenAPI V2
+  - OpenAPI V3
+- 持久性。Kubernetes通过将对象的序列化状态写入etcd来存储它们。
+- API组和版本控制。版本控制是在API级别进行的。API资源通过它们的API组、资源类型、命名空间（用于命名空间资源）和名称进行区分。
+  - API更改
+- API扩展
+
+
 
 #### API Version
 
-The API versioning and software versioning are indirectly related. 
-The API and release versioning proposal describes the relationship between API versioning and software versioning.
-Different API versions indicate different levels of stability and support. 
+API版本和软件版本间存在间接关系。API和发布版本计划描述了API版本和软件版本之间的关系。不同的API版本表示不同的稳定性和支持级别。
 
-Here's a summary of each level:
+以下是每个级别的摘要：
 
-* Alpha:
-  * The version names contain alpha (for example, v1alpha1).
-  * The software may contain bugs. Enabling a feature may expose bugs. A feature may be disabled by default.
-  * The support for a feature may be dropped at any time without notice.
-  * The API may change in incompatible ways in a later software release without notice.
-  * The software is recommended for use only in short-lived testing clusters, due to increased risk of bugs and lack of long-term support.
-* Beta:
-  * The version names contain beta (for example, v2beta3).
-  * The software is well tested. Enabling a feature is considered safe. Features are enabled by default.
-  * The support for a feature will not be dropped, though the details may change.
-  * The schema and/or semantics of objects may change in incompatible ways in a subsequent beta or stable release. When this happens, migration instructions are provided. Schema changes may require deleting, editing, and re-creating API objects. The editing process may not be straightforward. The migration may require downtime for applications that rely on the feature.
-  * The software is not recommended for production uses. Subsequent releases may introduce incompatible changes. If you have multiple clusters which can be upgraded independently, you may be able to relax this restriction.
-    Note: Please try beta features and provide feedback. After the features exit beta, it may not be practical to make more changes.
-* Stable:
-  * The version name is vX where X is an integer.
-  * The stable versions of features appear in released software for many subsequent versions.
+- Alpha：
+  - 版本名称包含alpha（例如，v1alpha1）。
+  - 软件可能包含错误。启用功能可能会暴露错误。某些功能可能默认禁用。
+  - 对于某些功能的支持可以随时取消，而不会提前通知。
+  - API可能会在以后的软件发布中以不兼容的方式更改，而不会提前通知。
+  - 由于错误风险增加和长期支持不足，建议仅在短暂的测试集群中使用该软件。
+- Beta：
+  - 版本名称包含beta（例如，v2beta3）。
+  - 软件经过充分测试。启用功能被认为是安全的。某些功能默认启用。
+  - 对于某些功能的支持不会取消，但细节可能会更改。
+  - 对象的模式和/或语义可能会在后续的Beta或稳定版发布中以不兼容的方式更改。当发生这种情况时，将提供迁移说明。模式更改可能需要删除、编辑和重新创建API对象。编辑过程可能不简单。迁移可能需要停机，以便依赖于该功能的应用程序。
+  - 不建议将该软件用于生产用途。后续的发布可能会引入不兼容的更改。如果您有多个可以独立升级的集群，则可以放宽此限制。
+    注意：请尝试beta功能并提供反馈。功能退出beta后，可能不实际再进行更改。
+- 稳定版：
+  - 版本名称为vX，其中X是整数。
+  - 功能的稳定版本出现在发布的软件中的许多后续版本中。
 
-Command to get current API
+读取当前API的版本命令：
 
-```
+```bash
 kubectl api-resources
 ```
 
 #### API Group
 
-[API groups](https://git.k8s.io/design-proposals-archive/api-machinery/api-group.md) make it easier to extend the Kubernetes API. 
-The API group is specified in a REST path and in the apiVersion field of a serialized object.
+[API组（API groups）](https://git.k8s.io/design-proposals-archive/api-machinery/api-group.md)使扩展Kubernetes API更加容易。API组在REST路径和序列化对象的apiVersion字段中指定。
 
-There are several API groups in Kubernetes:
+Kubernetes有几个API组：
 
-* The core (also called legacy) group is found at REST path `/api/v1`. 
-  * The core group is not specified as part of the apiVersion field, for example, apiVersion: v1.
-* The named groups are at REST path `/apis/$GROUP_NAME/$VERSION` and use apiVersion: `$GROUP_NAME/$VERSION` (for example, apiVersion: batch/v1). 
+- 核心组（也称为遗留legacy）位于REST路径 `/api/v1`。
+  - 核心组不作为apiVersion字段的一部分指定，例如 apiVersion: v1。
+- 命名组位于REST路径 `/apis/$GROUP_NAME/$VERSION`，并使用 apiVersion: `$GROUP_NAME/$VERSION`（例如 apiVersion: batch/v1）。
 
-### Kubernetes Objects
 
-#### Objects Overview:
 
-* Object Spec:
-  * providing a description of the characteristics the resource created to have: *its desired state*.
-* Object Status:
-  * describes the current state of the object.
+### Kubernetes对象
 
-Example of Deployment as an object that can represent an application running on cluster.
+#### 对象概述
 
-```
-apiVersion: apps/v1  # Which version of the Kubernetes API you're using to create this object
-kind: Deployment     # What kind of object you want to create
-metadata:            # Data that helps uniquely identify the object, including a name string, UID, and optional namespace
+对象规范（Object Spec）：
+
+- 提供了一个描述所创建资源的特性的说明：*其期望的状态*。
+
+对象状态（Object Status）：
+
+- 描述了对象的当前状态。
+
+
+
+比如，Deployment是一个可以代表集群上运行的应用程序的对象。
+
+```yaml
+apiVersion: apps/v1  # 当前用来创建对象的API版本
+kind: Deployment     # 创建对象的类型
+metadata:            # 用来区分对象的元数据，比如：名称，UID，命名空间等
   name: nginx-deployment
-spec:                # What state you desire for the object
+spec:                # 期望所创建对象的状态
   selector:
     matchLabels:
       app: nginx
-  replicas: 2 # tells deployment to run 2 pods matching the template
+  replicas: 2        # 告诉Deployment基于下面的模板template创建2个Pods
   template:
     metadata:
       labels:
@@ -157,81 +161,78 @@ spec:                # What state you desire for the object
         - containerPort: 80
 ```
 
-#### Object Management:
+#### 对象管理
 
-The `kubectl` command-line tool supports several different ways to create and manage Kubernetes objects. Read the [Kubectl book](https://kubectl.docs.kubernetes.io/) for details.
+`kubectl` 命令行工具支持多种不同的方式来创建和管理 Kubernetes 对象。详细信息请阅读 [Kubectl book](https://kubectl.docs.kubernetes.io/)。
 
-A Kubernetes object should be managed using ONLY one technique. Mixing and matching techniques for the same object results in undefined behavior. 
+一个 Kubernetes 对象应该仅使用一种技术进行管理。混合使用不同的技术来管理同一个对象会导致非预期的结果。
 
-Three management techniques:
+三种管理技术:
 
-* Imperative commands
-  * operates directly on live objects in a cluster. 
-  * `kubectl create deployment nginx --image nginx`
-* Imperative object configuration
-  * `kubectl create -f nginx.yaml`
-  * `kubectl delete -f nginx.yaml -f redis.yaml`
-  * `kubectl replace -f nginx.yaml`
-* Declarative object configuration
-  * `kubectl diff -f configs/`
-  * `kubectl apply -f configs/`
+- 命令式命令
+  - 直接在集群中操作实时对象。
+  - `kubectl create deployment nginx --image nginx`
+- 命令式对象配置
+  - `kubectl create -f nginx.yaml`
+  - `kubectl delete -f nginx.yaml -f redis.yaml`
+  - `kubectl replace -f nginx.yaml`
+- 声明式对象配置
+  - `kubectl diff -f configs/`
+  - `kubectl apply -f configs/`
 
-#### Object Names and IDs
 
-Each object in your cluster has a *Name* that is unique for that type of resource.
 
-* DNS Subdomain Names
-* Label Names
-* Path Segment Names
+#### 对象名称和ID
 
-Every Kubernetes object also has a *UID* that is unique across the whole cluster.
+集群中的每个对象都有一个在该资源类型中唯一的名称。
 
-#### Namespaces
+- DNS 子域名
+- 标签名称
+- 路径段名称
 
-In Kubernetes, namespaces provides a mechanism for isolating groups of resources within a single cluster. 
+每个 Kubernetes 对象还有一个 UID，在整个集群中是唯一的。
 
-Names of resources need to be unique within a namespace, but not across namespaces. 
+#### 命名空间
 
-Namespace-based scoping is applicable only for namespaced objects (e.g. Deployments, Services, etc) and not for cluster-wide objects (e.g. StorageClass, Nodes, PersistentVolumes, etc)
+在Kubernetes中，命名空间提供了一种在单个集群内隔离资源组的机制。
 
-Not All Objects are in a Namespace.
+资源的名称需要在命名空间内是唯一的，但不需要跨命名空间唯一。
 
-Kubernetes starts with four initial namespaces:
+基于命名空间的范围仅适用于命名空间对象（例如部署，服务等），而不适用于集群范围的对象（例如StorageClass，节点，持久卷等）。
 
-* `default` 
-    The default namespace for objects with no other namespace
-* `kube-system` 
-    The namespace for objects created by the Kubernetes system
-* `kube-public` 
-    This namespace is created automatically and is readable by all users (including those not authenticated). 
-    This namespace is mostly reserved for cluster usage, in case that some resources should be visible and readable publicly throughout the whole cluster. 
-    The public aspect of this namespace is only a convention, not a requirement.
-* `kube-node-lease` This namespace holds Lease objects associated with each node. Node leases allow the kubelet to send heartbeats so that the control plane can detect node failure.
+并非所有对象都位于命名空间中。
 
-Viewing namespaces: 
+Kubernetes从四个初始命名空间开始：
 
-* `kubectl get namespace`
+- `default` 用于没有其他命名空间的对象的默认命名空间
+- `kube-system` Kubernetes系统创建的对象的命名空间
+- `kube-public` 该命名空间是自动创建的，并可由所有用户（包括未经身份验证的用户）读取。此命名空间大多保留供集群使用，以防一些资源应在整个集群范围内公开和可读。此命名空间的公共方面只是一种约定，而不是要求。
+- `kube-node-lease` 此命名空间保存与每个节点关联的租赁对象。节点租赁允许kubelet发送心跳，以便控制平面可以检测到节点故障。
 
-Setting the namespace for a request
+查看命名空间：
 
-* `kubectl run nginx --image=nginx --namespace=<insert-namespace-name-here>`
-* `kubectl get pods --namespace=<insert-namespace-name-here>`
+- `kubectl get namespace`
 
-#### Labels and Selectors
+为请求设置命名空间
 
-Labels are key/value pairs that are attached to objects, such as pods. 
-Valid label keys have two segments: an optional prefix and name, separated by a slash (`/`).
+- `kubectl run nginx --image=nginx --namespace=<插入命名空间名称>`
+- `kubectl get pods --namespace=<插入命名空间名称>`
 
-Labels are intended to be used to specify identifying attributes of objects that are meaningful and relevant to users.
 
-Labels can be used to organize and to select subsets of objects. 
-Labels can be attached to objects at creation time and subsequently added and modified at any time. 
-Each object can have a set of key/value labels defined. 
-Each Key must be unique for a given object.
 
-Example of labels:
 
-```
+
+#### 标签和选择器
+
+标签是附加到对象（例如 Pod）的键/值对。有效的标签键有两个部分：可选的前缀和名称，由斜杠（`/`）分隔。
+
+标签旨在用于指定对用户有意义和相关的对象识别属性。
+
+标签可用于组织和选择对象子集。标签可以在创建对象时附加，随后在任何时候添加和修改。每个对象可以定义一组键/值标签，每个键必须对于给定对象是唯一的。
+
+标签的示例：
+
+```yaml
 "metadata": {
     "labels": {
         "key1" : "value1",
@@ -240,35 +241,36 @@ Example of labels:
 }
 ```
 
-Unlike names and UIDs, labels do not provide uniqueness. In general, we expect many objects to carry the same label(s).
+与名称和 UID 不同，标签不提供唯一性。通常情况下，我们期望许多对象带有相同的标签。
 
-The API currently supports two types of selectors: 
+目前 API 支持两种类型的选择器：
 
-* equality-based, e.g., `environment = production`, `tier != frontend`
-* set-based, e.g., `environment in (production, qa)`, `tier notin (frontend, backend)`
+- 基于等式的选择器，例如：`environment = production`、`tier != frontend`
+- 基于集合的选择器，例如：`environment in (production, qa)`、`tier notin (frontend, backend)`
 
-Sample commands:
+例如：
 
-```
+```bash
 kubectl get pods -l environment=production,tier=frontend
 kubectl get pods -l 'environment in (production),tier in (frontend)'
 kubectl get pods -l 'environment in (production, qa)'
 kubectl get pods -l 'environment,environment notin (frontend)'
 ```
 
-#### Annotations
+#### 注释Annotations
 
-Use Kubernetes annotations to attach arbitrary non-identifying metadata to objects. 
-Clients such as tools and libraries can retrieve this metadata.
+使用 Kubernetes 注释（Annotations）将任意非标识元数据附加到对象上。 工具和库等客户端可以检索此元数据。
 
-Use either labels or annotations to attach metadata to Kubernetes objects. 
+使用标签或注释将元数据附加到 Kubernetes 对象上。
 
-* Labels can be used to select objects and to find collections of objects that satisfy certain conditions. 
-* Annotations are not used to identify and select objects. 
+- 标签可用于选择对象并查找满足某些条件的对象集合。
+- 注释不用于标识和选择对象。
 
-Annotations, like labels, are key/value maps. The keys and the values in the map must be strings. 
+注释与标签类似，都是键/值映射。 映射中的键和值必须是字符串。
 
-```
+例如：
+
+```yaml
 "metadata": {
     "annotations": {
       "key1" : "value1",
@@ -277,15 +279,15 @@ Annotations, like labels, are key/value maps. The keys and the values in the map
 }
 ```
 
-Valid annotation keys have two segments: an optional prefix and name, separated by a slash (`/`). 
+合法的注释键具有两个部分：可选的前缀和名称，由斜杠 (`/`) 分隔。
 
-#### Field Selectors
+#### 字段选择器
 
-Field selectors let you select Kubernetes resources based on the value of one or more resource fields. 
+字段选择器（field selectors）可以根据一个或多个资源字段的值选择Kubernetes资源。
 
-Here are some examples of field selector queries:
+下面是一些使用字段选择器进行查询筛选的例子：
 
-```
+```yaml
 metadata.name=my-service
 metadata.namespace!=default
 status.phase=Pending
@@ -298,33 +300,39 @@ Supported field selectors vary by Kubernetes resource type. All resource types s
 
 Use the `=`, `==`, and `!=` operators with field selectors (`=` and `==` mean the same thing). 
 
-For example:
+下面 kubectl 命令选择所有状态(phase)字段值为 Running 的 Pod： 
 
-`kubectl get ingress --field-selector foo.bar=baz`
+```bash
+kubectl get pods --field-selector status.phase=Running
+```
 
-With operators, 
-`kubectl get services  --all-namespaces --field-selector metadata.namespace!=default`
+支持的字段选择器因 Kubernetes 资源类型而异。所有资源类型都支持 `metadata.name` 和 `metadata.namespace` 字段。
 
-Chained selectors, 
-`kubectl get pods --field-selector=status.phase!=Running,spec.restartPolicy=Always`
+在字段选择器中使用 `=`, `==`, 和 `!=` 运算符(`=` 和 `==` 表示相同的意思)。
 
-Multiple resource types, 
-`kubectl get statefulsets,services --all-namespaces --field-selector metadata.namespace!=default`
+例如：
 
-#### Finalizers
+```bash
+kubectl get ingress --field-selector foo.bar=baz
 
-Finalizers are *namespaced keys* that tell Kubernetes to wait until specific conditions are met before it fully deletes resources marked for *deletion*. 
-*Finalizers alert controllers* to clean up resources the deleted object owned.
+kubectl get services --all-namespaces --field-selector metadata.namespace!=default
 
-Finalizers are usually added to resources for a reason, so forcefully removing them can lead to issues in the cluster.
+kubectl get pods --field-selector=status.phase!=Running,spec.restartPolicy=Always
 
-Like labels, *owner references* describe the relationships between objects in Kubernetes, but are used for a different purpose.
+kubectl get statefulsets,services --all-namespaces --field-selector metadata.namespace!=default
+```
 
-Kubernetes uses the owner references (not labels) to determine which Pods in the cluster need cleanup.
+Finalizers是*命名空间键*，告诉Kubernetes在满足特定条件之前等待，然后再完全删除标记为*删除*的资源。 Finalizer警告控制器controller清理已删除对象所拥有的资源。
 
-Kubernetes processes finalizers when it identifies owner references on a resource targeted for deletion.
+通常因为某种目的为资源添加Finalizers，强制删除它们可能会导致集群中出现问题。
 
-#### Owners and Dependents
+与标签类似，*所有者引用*（Owner references）描述了Kubernetes中对象之间的关系，但用于不同的目的。
+
+Kubernetes使用所有者引用（而不是标签）来确定集群中哪些Pod需要清理。
+
+当Kubernetes识别到目标删除的资源上有所有者引用时，它会处理Finalizer。
+
+#### 所有者和依赖关系
 
 In Kubernetes, some objects are owners of other objects. For example, a ReplicaSet is the owner of a set of Pods. 
 These owned objects are dependents of their owner.
