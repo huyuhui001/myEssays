@@ -361,274 +361,253 @@ API允许以声明性方式管理配置。
   - *EndpointSlice*. EndpointSlice 表示实现服务的终结点的子集。
   - *Ingress*. Ingress 是一组规则，允许入站连接到达由后端定义的终结点。
   - *IngressClass*. IngressClass 表示 Ingress 的类，由 Ingress Spec 引用。
-* Config and Storage Resources
-  * *ConfigMap*. ConfigMap holds configuration data for pods to consume.
-  * *Secret*. Secret holds secret data of a certain type.
-  * *Volume*. Volume represents a named volume in a pod that may be accessed by any container in the pod.
-  * *PersistentVolumeClaim*. PersistentVolumeClaim is a user's request for and claim to a persistent volume.
-  * *PersistentVolume*. PersistentVolume (PV) is a storage resource provisioned by an administrator.
-  * *StorageClass*. StorageClass describes the parameters for a class of storage for which PersistentVolumes can be dynamically provisioned.
-  * *VolumeAttachment*. VolumeAttachment captures the intent to attach or detach the specified volume to/from the specified node.
-  * *CSIDriver*. CSIDriver captures information about a Container Storage Interface (CSI) volume driver deployed on the cluster.
-  * *CSINode*. CSINode holds information about all CSI drivers installed on a node.
-  * *CSIStorageCapacity*. CSIStorageCapacity stores the result of one CSI GetCapacity call.
-* Authentication Resources
-  * *ServiceAccount*. ServiceAccount binds together: 
-    * a name, understood by users, and perhaps by peripheral systems, for an identity 
-    * a principal that can be authenticated and authorized 
-    * a set of secrets.
-  * *TokenRequest*. TokenRequest requests a token for a given service account.
-  * *TokenReview*. TokenReview attempts to authenticate a token to a known user.
-  * *CertificateSigningRequest*. CertificateSigningRequest objects provide a mechanism to obtain x509 certificates by submitting a certificate signing request, and having it asynchronously approved and issued.
-* Authorization Resources
-  * *LocalSubjectAccessReview*. LocalSubjectAccessReview checks whether or not a user or group can perform an action in a given namespace.
-  * *SelfSubjectAccessReview*. SelfSubjectAccessReview checks whether or the current user can perform an action.
-  * *SelfSubjectRulesReview*. SelfSubjectRulesReview enumerates the set of actions the current user can perform within a namespace.
-  * *SubjectAccessReview*. SubjectAccessReview checks whether or not a user or group can perform an action.
-  * *ClusterRole*. ClusterRole is a cluster level, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding or ClusterRoleBinding.
-  * *ClusterRoleBinding*. ClusterRoleBinding references a ClusterRole, but not contain it.
-  * *Role*. Role is a namespaced, logical grouping of PolicyRules that can be referenced as a unit by a RoleBinding.
-  * *RoleBinding*. RoleBinding references a role, but does not contain it.
-* Policy Resources
-  * *LimitRange*. LimitRange sets resource usage limits for each kind of resource in a Namespace.
-  * *ResourceQuota*. ResourceQuota sets aggregate quota restrictions enforced per namespace.
-  * *NetworkPolicy*. NetworkPolicy describes what network traffic is allowed for a set of Pods.
-  * *PodDisruptionBudget*. PodDisruptionBudget is an object to define the max disruption that can be caused to a collection of pods.
-  * *PodSecurityPolicy v1beta1*. PodSecurityPolicy governs the ability to make requests that affect the Security Context that will be applied to a pod and container.
-* Extend Resources
-  * *CustomResourceDefinition*. CustomResourceDefinition represents a resource that should be exposed on the API server.
-  * *MutatingWebhookConfiguration*. MutatingWebhookConfiguration describes the configuration of and admission webhook that accept or reject and may change the object.
-  * *ValidatingWebhookConfiguration(). ValidatingWebhookConfiguration describes the configuration of and admission webhook that accept or reject and object without changing it.
-* Cluster Resources
-  * *Node*. Node is a worker node in Kubernetes.
-  * *Namespace*. Namespace provides a scope for Names.
-  * *Event*. Event is a report of an event somewhere in the cluster.
-  * *APIService*. APIService represents a server for a particular GroupVersion.
-  * *Lease*. Lease defines a lease concept.
-  * *RuntimeClass*. RuntimeClass defines a class of container runtime supported in the cluster.
-  * *FlowSchema v1beta2*. FlowSchema defines the schema of a group of flows.
-  * *PriorityLevelConfiguration v1beta2*. PriorityLevelConfiguration represents the configuration of a priority level.
-  * *Binding*. Binding ties one object to another; for example, a pod is bound to a node by a scheduler.
-  * *ComponentStatus*. ComponentStatus (and ComponentStatusList) holds the cluster validation info.
+* 配置和存储资源（Config and Storage Resources）
+  - *ConfigMap*。ConfigMap保存容器需要使用的配置数据。
+  - *Secret*。Secret保存特定类型的机密数据。
+  - *Volume*。Volume表示Pod中的命名卷，可以被Pod中的任何容器访问。
+  - *PersistentVolumeClaim*。PersistentVolumeClaim是用户对持久卷的请求和声明。
+  - *PersistentVolume*。PersistentVolume（PV）是由管理员提供的存储资源。
+  - *StorageClass*。StorageClass描述可动态分配PersistentVolumes的存储类别的参数。
+  - *VolumeAttachment*。VolumeAttachment记录将指定的卷附加到/从指定节点中分离的意图。
+  - *CSIDriver*。CSIDriver记录集群上部署的容器存储接口（CSI）卷驱动程序的信息。
+  - *CSINode*。CSINode保存有关节点上安装的所有CSI驱动程序的信息。
+  - *CSIStorageCapacity*。CSIStorageCapacity存储一个CSI GetCapacity调用的结果。
+* 认证资源（Authentication Resources）
+  - ServiceAccount*。ServiceAccount和下面的信息绑定在一起：
+    - 一个可被用户和周边系统理解的名称，用于身份识别
+    - 可进行身份验证和授权的主体
+    - 一组密钥。
+  - TokenRequest*。TokenRequest为给定的ServiceAccount请求一个令牌。
+  - TokenReview*。TokenReview尝试对已知用户的令牌进行身份验证。
+  - CertificateSigningRequest*。CertificateSigningRequest对象提供了一种通过提交证书签名请求并异步批准和发放来获取x509证书的机制。
+* 授权资源（Authorization Resources）
+  - LocalSubjectAccessReview*。LocalSubjectAccessReview检查一个用户或组在给定命名空间中是否能执行某个操作。
+  - SelfSubjectAccessReview*。SelfSubjectAccessReview检查当前用户是否能执行某个操作。
+  - SelfSubjectRulesReview*。SelfSubjectRulesReview枚举当前用户在一个命名空间内可以执行的操作集合。
+  - SubjectAccessReview*。SubjectAccessReview检查一个用户或组是否能执行某个操作。
+  - ClusterRole*。ClusterRole是一个集群级别的PolicyRules逻辑分组，可以被RoleBinding或ClusterRoleBinding引用为一个单元。
+  - ClusterRoleBinding*。ClusterRoleBinding引用一个ClusterRole，但不包含它。
+  - Role*。Role是一个命名空间级别的PolicyRules逻辑分组，可以被RoleBinding引用为一个单元。
+  - RoleBinding*。RoleBinding引用一个Role，但不包含它。
+* 策略资源（Policy Resources）
+  - LimitRange*。LimitRange为命名空间中每种资源设置资源使用限制。
+  - ResourceQuota*。ResourceQuota设置每个命名空间强制执行的总配额限制。
+  - NetworkPolicy*。NetworkPolicy描述了一组Pod允许的网络流量。
+  - PodDisruptionBudget*。PodDisruptionBudget是一个对象，用于定义对一组Pod可能造成的最大中断。
+  - PodSecurityPolicy v1beta1*。PodSecurityPolicy控制对可能影响将应用于Pod和容器的安全上下文的请求的能力。
+* 扩展资源（Extend Resources）
+  - CustomResourceDefinition*。CustomResourceDefinition表示应在API服务器上公开的资源。
+  - MutatingWebhookConfiguration*。MutatingWebhookConfiguration描述接受或拒绝并可能更改对象的准入Webhook的配置。
+  - ValidatingWebhookConfiguration*。ValidatingWebhookConfiguration描述接受或拒绝对象但不更改对象的准入Webhook的配置。
+* 集群资源（Cluster Resources）
+  - Node*。Node是Kubernetes中的工作节点。
+  - Namespace*。Namespace为名称提供了作用域。
+  - Event*。Event是对集群中某个位置发生事件的报告。
+  - APIService*。APIService表示特定GroupVersion的服务器。
+  - Lease*。Lease定义了租赁的概念。
+  - RuntimeClass*。RuntimeClass定义了集群中支持的容器运行时类。
+  - FlowSchema v1beta2*。FlowSchema定义了一组流程的架构。
+  - PriorityLevelConfiguration v1beta2*。PriorityLevelConfiguration表示优先级级别的配置。
+  - Binding*。Binding将一个对象绑定到另一个对象；例如，调度程序将Pod绑定到节点上。
+  - ComponentStatus*。ComponentStatus（和ComponentStatusList）保存集群验证信息。
 
-Command `kube api-resources` to get the supported API resources.
 
-Command `kubectl explain RESOURCE [options]` describes the fields associated with each supported API resource. 
-Fields are identified via a simple JSONPath identifier:
 
-```
+使用命令 `kube api-resources` 获取支持的API资源。
+
+使用命令 `kubectl explain RESOURCE [options]` 描述与每个支持的API资源相关联的字段。这些字段可以通过简单的JSONPath标识符进行识别：
+
+```bash
 kubectl explain binding
 kubectl explain binding.metadata
 kubectl explain binding.metadata.name
 ```
 
-## Workload Resources
+## 工作负载资源
 
 ### Pods
 
-Pods are the smallest deployable units of computing that you can create and manage in Kubernetes.
+Pod是Kubernetes中可创建和管理的最小部署计算单位。
 
-A Pod is a group of one or more containers, with shared storage and network resources, and a specification for how to run the containers.
+Pod是一个包含一个或多个容器、共享存储和网络资源以及如何运行容器的规范的组。
 
-A Pod's contents are always co-located and co-scheduled, and run in a shared context. 
+Pod的内容始终共同定位和共同安排，并在共享环境中运行。
 
-A Pod models an application-specific "logical host": it contains one or more application containers which are relatively tightly coupled. 
+Pod模拟了一个特定于应用程序的“逻辑主机”：它包含一个或多个相对紧密耦合的应用程序容器。
 
-In non-cloud contexts, applications executed on the same physical or virtual machine are analogous to cloud applications executed on the same logical host.
+在非云环境中，同一物理或虚拟机上执行的应用程序类似于在同一逻辑主机上执行的云应用程序。
 
-The shared context of a Pod is a set of Linux namespaces, cgroups, and potentially other facets of isolation - the same things that isolate a Docker container.
+Pod的共享环境是一组Linux命名空间、cgroups和可能的其他隔离要素 - 这些要素与隔离Docker容器的方式相同。
 
-In terms of Docker concepts, a Pod is similar to a group of Docker containers with shared namespaces and shared filesystem volumes.
+在Docker概念方面，Pod类似于具有共享命名空间和共享文件系统卷的一组Docker容器。
 
-Usually you don't need to create Pods directly, even singleton Pods. Instead, create them using workload resources such as *Deployment* or *Job*. 
-If your Pods need to track state, consider the StatefulSet resource.
+通常情况下，甚至是单例Pod，我们都不需要直接创建Pod，而是使用工作负载资源，例如*Deployment*或*Job*来创建它们。如果Pod需要跟踪状态，则可以使用StatefulSet资源。
 
-Pods in a Kubernetes cluster are used in two main ways:
+Kubernetes集群中的Pod有两种主要用法：
 
-* Pods that run a single container. 
-* Pods that run multiple containers that need to work together. 
+- 运行单个容器的Pod。
+- 运行需要共同工作的多个容器的Pod。
 
-The "one-container-per-Pod" model is the most common Kubernetes use case; 
-in this case, you can think of a Pod as a wrapper around a single container; 
-Kubernetes manages Pods rather than managing the containers directly.
+“每个Pod一个容器”的模型是最常见的Kubernetes用例；在这种情况下可以将Pod视为单个容器的包装器；Kubernetes管理Pod而不是直接管理容器。
 
-A Pod can encapsulate an application composed of multiple co-located containers that are tightly coupled and need to share resources. 
+一个Pod可以封装由多个共同定位、紧密耦合且需要共享资源的容器组成的应用程序。
 
-These co-located containers form a single cohesive unit of service—for example, one container serving data stored in a shared volume to the public, 
-while a separate sidecar container refreshes or updates those files. 
-The Pod wraps these containers, storage resources, and an ephemeral network identity together as a single unit.
+这些共同定位的容器形成一个单一的服务整体单元 - 例如，一个容器向公众提供存储在共享卷中的数据，而另一个独立的Sidecar容器刷新或更新这些文件。Pod将这些容器、存储资源和短暂的网络标识包装在一起，作为一个单独的单位。
 
-Grouping multiple co-located and co-managed containers in a single Pod is a relatively advanced use case. 
-You should use this pattern *only* in specific instances in which your containers are tightly coupled.
+在单个Pod中分组多个共同定位和共同管理的容器是相对高级的用例。应该*仅在*容器紧密耦合的特定情况下使用此模式。
 
-Each Pod is meant to run a single instance of a given application. 
-If you want to scale your application horizontally (to provide more overall resources by running more instances), you should use multiple Pods, one for each instance. 
-In Kubernetes, this is typically referred to as *replication*. Replicated Pods are usually created and managed as a group by a workload resource and its controller.
+每个Pod都旨在运行给定应用程序的单个实例。如果我们想水平扩展您的应用程序（通过运行更多实例提供更多的总资源），则应该使用多个Pod，每个实例一个Pod。在Kubernetes中，这通常称为*复制*。复制的Pod通常作为工作负载资源及其控制器的一组创建和管理。
 
-Pods natively provide two kinds of shared resources for their constituent containers: *[networking](https://kubernetes.io/docs/concepts/workloads/pods/#pod-networking)* and *[storage](https://kubernetes.io/docs/concepts/workloads/pods/#pod-storage)*.
+Pod本地提供两种共享资源以供其组成容器使用：*[网络](https://kubernetes.io/docs/concepts/workloads/pods/#pod-networking)*和*[存储](https://kubernetes.io/docs/concepts/workloads/pods/#pod-storage)*。
 
-A Pod can specify a set of shared storage volumes. All containers in the Pod can access the shared volumes, allowing those containers to share data. 
+一个Pod可以指定一组共享的存储卷。Pod中的所有容器都可以访问这些共享卷，使这些容器可以共享数据。
 
-Each Pod is assigned a unique IP address for each address family.
-Within a Pod, containers share an IP address and port space, and can find each other via `localhost`.
-Containers that want to interact with a container running in a different Pod can use IP networking to communicate.
+每个Pod为每个地址族分配一个唯一的IP地址。
+在一个Pod内，容器共享一个IP地址和端口空间，并可以通过“localhost”找到彼此。想要与运行在不同Pod中的容器交互的容器可以使用IP网络进行通信。
 
-When a Pod gets created, the new Pod is scheduled to run on a Node in your cluster. 
-The Pod remains on that node until the Pod finishes execution, the Pod object is deleted, the Pod is evicted for lack of resources, or the node fails.
+当创建一个Pod时，新的Pod被调度在集群中的一个节点上运行。Pod保留在该节点上，直到Pod执行完毕、Pod对象被删除、Pod因缺乏资源而被驱逐或节点发生故障。
 
-Restarting a container in a Pod should not be confused with restarting a Pod. 
-A Pod is not a process, but an environment for running container(s). 
-A Pod persists until it is deleted.
+在Pod中重新启动一个容器不应与重新启动一个Pod混淆。Pod不是一个进程，而是一个运行容器的环境。Pod会一直保留，直到被删除为止。
 
-You can use workload resources (e.g., Deployment, StatefulSet, DaemonSet) to create and manage multiple Pods for you. 
-A controller for the resource handles replication and rollout and automatic healing in case of Pod failure.
+您可以使用工作负载资源（例如Deployment、StatefulSet、DaemonSet）为自己创建和管理多个Pod。资源的控制器处理复制、滚动和在Pod失败时的自动恢复。![Pod with multiple containers](https://d33wubrfki0l68.cloudfront.net/aecab1f649bc640ebef1f05581bfcc91a48038c4/728d6/images/docs/pod.svg)
 
-![Pod with multiple containers](https://d33wubrfki0l68.cloudfront.net/aecab1f649bc640ebef1f05581bfcc91a48038c4/728d6/images/docs/pod.svg)
+#### 初始化容器
 
-#### InitContainer
+一些Pod还有初始化容器（Init containers）和应用容器（app containers）。初始化容器在应用容器启动之前运行并完成。
 
-Some Pods have init containers as well as app containers. Init containers run and complete before the app containers are started.
+我们可以在Pod规范中指定初始化容器，同时也可以在容器数组中描述应用容器。
 
-You can specify init containers in the Pod specification alongside the containers array (which describes app containers).
+#### 静态Pod
 
-#### Static Pod
+静态Pod是直接由特定节点上的kubelet守护程序管理的，API服务器不会观察它们。
 
-Static Pods are managed directly by the kubelet daemon on a specific node, without the API server observing them. 
+静态Pod始终绑定到特定节点上的一个Kubelet。
 
-Static Pods are always bound to one Kubelet on a specific node. 
+静态Pod的主要用途是运行自托管控制面板：换句话说，使用kubelet监督各个控制面板组件。
 
-The main use for static Pods is to run a self-hosted control plane: in other words, using the kubelet to supervise the individual control plane components.
+kubelet会自动尝试为每个静态Pod在Kubernetes API服务器上创建一个镜像Pod。这意味着在节点上运行的Pod在API服务器上可见，但无法从那里控制。
 
-The kubelet automatically tries to create a mirror Pod on the Kubernetes API server for each static Pod. 
-This means that the Pods running on a node are visible on the API server, but cannot be controlled from there.
+#### 容器探针
 
-#### Container probes
+探针是 kubelet 定期对容器执行的一种诊断。
 
-A probe is a diagnostic performed periodically by the kubelet on a container. 
+为执行诊断，kubelet 要么在容器内执行代码，要么发起网络请求。
 
-To perform a diagnostic, the kubelet either executes code within the container, or makes a network request.
+使用探针有四种不同的检查容器方式。每个探针必须恰好定义这四种机制中的一种：
 
-There are four different ways to check a container using a probe. Each probe must define exactly one of these four mechanisms:
+- *exec*。如果命令以状态代码 0 退出，则将诊断视为成功。
+- *grpc*。如果响应的状态为 SERVING，则将诊断视为成功。
+- *httpGet*。如果响应的状态代码大于或等于 200 且小于 400，则将诊断视为成功。
+- *tcpSocket*。如果端口开放，则将诊断视为成功。
 
-* *exec*. The diagnostic is considered successful if the command exits with a status code of 0.
-* *grpc*. The diagnostic is considered successful if the status of the response is SERVING.
-* *httpGet*. The diagnostic is considered successful if the response has a status code greater than or equal to 200 and less than 400.
-* *tcpSocket*. The diagnostic is considered successful if the port is open.
+每个探针有三种结果：
 
-Each probe has one of three results:
+- 成功
+- 失败
+- 未知
 
-* Success
-* Failure
-* Unknown
+探针类型：
 
-Types of probe:
-
-* *livenessProbe*. Indicates whether the container is running. 
-* *readinessProbe*. Indicates whether the container is ready to respond to requests.
-* *startupProbe*. Indicates whether the application within the container is started.
+- *livenessProbe*。指示容器是否正在运行。
+- *readinessProbe*。指示容器是否准备好响应请求。
+- *startupProbe*。指示容器内的应用程序是否启动。
 
 ### Deployment
 
 ### ReplicaSet
 
-A ReplicaSet’s purpose is to maintain a stable set of replica Pods running at any given time. 
-As such, it is often used to guarantee the availability of a specified number of identical Pods.
+ReplicaSet的目的是在任何时候维护一组稳定的副本Pod。因此，它通常用于保证指定数量的相同Pod的可用性。
 
-You may never need to manipulate ReplicaSet objects: use a Deployment instead, and define your application in the spec section.
+我们一般不需要直接操纵ReplicaSet对象：使用Deployment，然后在spec部分中定义您的应用程序。
 
-You can specify how many Pods should run concurrently by setting `replicaset.spec.replicas`. 
-The ReplicaSet will create/delete its Pods to match this number.
-If you do not specify `replicaset.spec.replicas`, then it defaults to `1`.
+可以通过设置`replicaset.spec.replicas`来指定应同时运行多少个Pod。 ReplicaSet将创建/删除其Pod以匹配此数字。
+如果不指定`replicaset.spec.replicas`，则默认值为`1`。
 
 ### StatefulSet
 
-StatefulSet Characteristics (aka, stick ID):
+StatefulSet 特点（又称固定标识）：
 
-* Pod's name is immutable after created.
-* DNS hostname is immutable after created.
-* Mounted volume is immutable after created.
+- Pod 的名称在创建后不可变。
+- DNS 主机名在创建后不可变。
+- 挂载的卷在创建后不可变。
 
-Stick ID of StatefulSet won't be changed after failure, scaling, and other operations. 
+StatefulSet 的固定标识在失败、扩展和其他操作后不会改变。
 
-Naming convention of StatefulSet: `<StatefulSetName>-<Integer>`.
+StatefulSet 的命名约定为：`<StatefulSetName>-<Integer>`。
 
-StatefulSet can be scalling by itsself, but Deployment need rely on ReplicaSet for scalling.
+StatefulSet 可以自行进行扩展，但是 Deployment 需要依靠 ReplicaSet 进行扩展。
 
-Recommendation: reduce StatefulSet to 0 first instead of delete it directly.
+建议：先将 StatefulSet 减少到 0，而不是直接删除它。
 
-*headless* Service and *governing* Service:
+*headless* Service 和 *governing* Service：
 
-* Headless Service is a normal Kubernetes Service object that its spec.clusterIP is set to `None`.
-* When `spec.ServiceName` of StatefulSet is set to the headless Service name, the StatefulSet is now a governing Service.
+- Headless Service 是一个普通的 Kubernetes Service 对象，其 `spec.clusterIP` 被设置为 `None`。
+- 当 StatefulSet 的 `spec.ServiceName` 设置为 headless Service 名称时，StatefulSet 现在是一个 governing Service。
 
-General procedure to create a StatefulSet: 
+创建 StatefulSet 的一般过程：
 
-* Create a StorageClass
-* Create Headless Service
-* Create StatefulSet based on above two.
+- 创建 StorageClass。
+- 创建 Headless Service。
+- 基于上述两个创建 StatefulSet。
+
+
 
 ### DaemonSet
 
-A DaemonSet ensures that all (or some) Nodes run a copy of a Pod. As nodes are removed from the cluster, those Pods are garbage collected. 
+DaemonSet保证所有（或部分）节点运行Pod的副本。随着节点从集群中删除，这些Pod将被垃圾回收。
 
-Deleting a DaemonSet will clean up the Pods it created.
+删除DaemonSet将清理它创建的Pod。
 
-Some typical uses of a DaemonSet are:
+一些典型DaemonSet的用途包括：
 
-* running a cluster storage daemon on every node
-* running a logs collection daemon on every node
-* running a node monitoring daemon on every node
+- 在每个节点上运行集群存储守护程序。
+- 在每个节点上运行日志收集守护程序。
+- 在每个节点上运行节点监视守护程序。
 
-In a simple case, one DaemonSet, covering all nodes, would be used for each type of daemon. 
+在简单的情况下，每种类型的守护程序将使用覆盖所有节点的一个DaemonSet。
 
-A more complex setup might use multiple DaemonSets for a single type of daemon, but with different flags and/or different memory and cpu requests for different hardware types.
+更复杂的设置可能会为单个守护程序使用多个DaemonSet，但使用不同的标志和/或不同的内存和CPU请求来支持不同的硬件类型。
 
-The DaemonSet controller reconciliation process reviews both existing nodes and newly created nodes. 
+DaemonSet控制器调和过程同时检查现有节点和新创建的节点。
 
-By default, the Kubernetes scheduler ignores the pods created by the DamonSet, and lets them exist on the node until the node itself is shut down. 
+默认情况下，Kubernetes调度程序忽略由DamonSet创建的Pod，并允许它们存在于节点上，直到关闭节点本身。
 
-Running Pods on select Nodes:
+在选择节点上运行Pod：
 
-* If you specify a `daemonset.spec.template.spec.nodeSelector`, then the DaemonSet controller will create Pods on nodes which match that node selector. 
-* If you specify a `daemonset.spec.template.spec.affinity`, then DaemonSet controller will create Pods on nodes which match that node affinity. 
-* If you do not specify either, then the DaemonSet controller will create Pods on all nodes.
+- 如果您指定`daemonset.spec.template.spec.nodeSelector`，那么DaemonSet控制器将在与该节点选择器匹配的节点上创建Pod。
+- 如果您指定`daemonset.spec.template.spec.affinity`，那么DaemonSet控制器将在与该节点亲和力匹配的节点上创建Pod。
+- 如果两者都不指定，则DaemonSet控制器将在所有节点上创建Pod。
 
-There is no field `replicas` in `kubectl explain daemonset.spec` against with `kubectl explain deployment.spec.replicas`.
-When a DaemonSet is created, each node will have *one* DaemonSet Pod running.
+在`kubectl explain daemonset.spec`中没有`replicas`字段与`kubectl explain deployment.spec.replicas`相对应。当创建一个DaemonSet时，每个节点将运行*一个* DaemonSet Pod。
 
-We’ll use a `Deployment`/`ReplicaSet` for services, mostly stateless, where we don’t care where the node is running, 
-but we care more about the number of copies of our pod is running, and we can scale those copies/replicas up or down. 
-Rolling updates would also be a benefit here.
+对于服务，通常是无状态的，一般不关心节点在哪里运行，更关心Pod副本的数量，并且我们可以将这些副本/replicas缩放。在这里，滚动更新也将是一个优点。
 
-We’ll use a `DaemonSet` when a copy of our pod must be running on the specific nodes that we require. 
-Our daemon pod also needs to start before any of our other pods.
+当Pod的一个副本必须在某个指定节点上运行时，我们将使用`DaemonSet`。我们的守护进程Pod还需要在我们的其他Pod之前启动。
 
-A DaemonSet is a simple scalability strategy for background services. 
-When more eligible nodes are added to the cluster, the background service scales up. 
-When nodes are removed, it will automatically scale down.
+DaemonSet是用于后台服务的简单可扩展性策略。当更多的合适的节点添加到集群时，后台服务将扩展。当节点被删除时，它将自动缩小。
 
 ### Job
 
 ### CronJob
 
-## Service Resource
+## 服务资源
 
 ### Service
 
-Service is a named abstraction of software service (for example, mysql) consisting of local port (for example 3306) that the proxy listens on, and the selector that determines which pods will answer requests sent through the proxy.
+Service是软件服务（例如mysql）的命名抽象，由代理监听的本地端口（例如3306）和确定哪些Pod将回答通过代理发送的请求的选择器组成。
 
-The set of Pods targeted by a Service is usually determined by a selector (label selector). 
+一个Service的目标Pod集合通常由一个选择器（标签选择器）来确定。
 
-Type of service resource:
+Service资源的类型包括：
 
-* ClusterIP Service (default): Reliable IP, DNS, and Port. Internal acess only.
-* NodePort Service: Expose to external access.
-* LoadBalancer: Based on NodePort and integrated with loader balance provided by cloud venders (e.g., AWS, GCP, etc.).
-* ExternalName: Acces will be trafficed to external service.
+- ClusterIP Service（默认）：可靠的IP、DNS和端口。仅限内部访问。
+- NodePort Service：向外部提供访问。
+- LoadBalancer：基于NodePort，并与云供应商提供的负载平衡集成（例如AWS、GCP等）。
+- ExternalName：访问将被转发到外部服务。
 
-Here is an example of yaml file to create a Service.
+下面是一个创建简单Service的yaml文件：
 
-```
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -645,15 +624,15 @@ spec:
   type: NodePort
 ```
 
-Here is an example of Service.
+下面是一个Service的例子：
 
-* IP`10.96.17.77` is ClusterIP(VIP) of the service
-* Port `<unset>  80/TCP` is the port on Pod that service listening within the cluster.
-* TargetPort `8080/TCP` is the port on the container that the service should direct traffic to.
-* NodePort `<unset>  31893/TCP` is the port that can be accessed outside. Default range is `30000~32767`. The port is exposed across **all** nodes in cluster.
-* Endpoints show the list of Pods matched the service labels. 
+- IP `10.96.17.77` 是该服务的 ClusterIP(VIP)。
+- 端口 `<unset> 80/TCP` 是 Pod 在集群内监听的端口。
+- TargetPort `8080/TCP` 是容器内服务应该定向流量到达的端口。
+- NodePort `<unset> 31893/TCP` 是可以从外部访问的端口。默认范围是 `30000~32767`。该端口会在整个集群的所有节点上暴露。
+- Endpoints 显示了匹配服务标签的 Pod 列表。
 
-```
+```yaml
 Name:                     nginx-deployment
 Namespace:                jh-namespace
 Labels:                   tier=application
@@ -673,62 +652,64 @@ External Traffic Policy:  Cluster
 Events:                   <none>
 ```
 
-Service `kube-dns` beyond Deployment `coredns` provides cluster DNS service in Kubernetes cluster. 
+在 Kubernetes 集群中，基于Deployment `coredns` 的Service `kube-dns`提供了集群 DNS 服务。
 
-Service registration:
+服务注册：
 
-* Kubernetes uses cluster DNS as service registration.
-* Registration is Service based, not Pod based.
-* Cluster DNS (CoreDNS) is monitoring and discvering new service actively.
-* Service Name, IP, Port will be registered.
+- Kubernetes 使用集群 DNS 作为服务注册。
+- 注册是基于 Service 而非 Pod 的。
+- 集群 DNS（CoreDNS）主动监视和发现新服务。
+- Service 名称、IP、端口将被注册。
 
-Procedure of Service registration.
+Service 注册的过程如下：
 
-* POST new Service to API Server.
-* Assign ClusterIP to the new Service.
-* Save new Service configuration info to etcd.
-* Create endpoints with related Pod IPs associated with the new Service.
-* Explore the new Service by ClusterDNS.
-* Create DNS info.
-* kube-proxy fetch Service configration info.
-* Create IPSV rule.
+- 将新的 Service POST 到 API Server。
+- 为新的 Service 分配 ClusterIP。
+- 将新的 Service 配置信息保存到 etcd 中。
+- 创建与新 Service 关联的带有相关 Pod IP 的 endpoints。
+- 通过 ClusterDNS 探索新的 Service。
+- 创建 DNS 信息。
+- kube-proxy 获取 Service 配置信息。
+- 创建 IPSV 规则。
 
-Procedure of Service discovery.
+Service 发现的过程。
 
-* Request DNS name resolution for a Service name.
-* Receive ClusterIP.
-* Traffic access to ClusterIP.
-* No router. Forward request to Pod's default gateway.
-* Forward request to node.
-* No router. Forward request to Node's default gateway.
-* Proceed the request by Node kernel.
-* Trap the request by IPSV rule.
-* Put destination Pod's IP into the request's destination IP. 
-* The request arrives destination Pod.
+- 请求一个 Service 名称的 DNS 名称解析。
+- 收到 ClusterIP。
+- 访问 ClusterIP。
+- 没有路由器。将请求转发到 Pod 的默认网关。
+- 将请求转发到节点。
+- 没有路由器。将请求转发到节点的默认网关。
+- 节点内核继续处理请求。
+- 使用 IPSV 规则捕获请求。
+- 将目标 Pod 的 IP 放入请求的目标 IP 中。
+- 请求到达目标 Pod。
 
-FQDN format: `<object-name>.<namespace>.svc.cluster.local`. We call `<object-name>` as unqualified name, or short name.
-Namespaces can segregate the cluster's address space. At the same time, it can also be used to implement access control and resource quotas.
 
-Get DNS configuration in a Pod. 
-The IP of nameserver is same with ClusterIP of kube-dns Service, which is well-known IP for request of DNS or service discovery.
 
-```
-root@cka001:/etc# kubectl get service kube-dns -n kube-system
+FQDN格式为：`<object-name>.<namespace>.svc.cluster.local`。我们称`<object-name>`为非限定名称或简短名称。
+命名空间可以隔离集群的地址空间。同时，它还可以用于实现访问控制和资源配额。
+
+获取Pod中的DNS配置。
+nameserver的IP与kube-dns服务的ClusterIP相同，这是用于DNS请求或服务发现请求的众所周知的IP。
+
+```bash
+$ kubectl get service kube-dns -n kube-system
 NAME       TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE
 kube-dns   ClusterIP   10.96.0.10   <none>        53/UDP,53/TCP,9153/TCP   7d7h
 
 
-root@cka001:~# kubectl exec -it nginx-5f5496dc9-bv5dx -- /bin/bash
+$ kubectl exec -it nginx-5f5496dc9-bv5dx -- /bin/bash
 root@nginx-5f5496dc9-bv5dx:/# cat /etc/resolv.conf
 search jh-namespace.svc.cluster.local svc.cluster.local cluster.local
 nameserver 10.96.0.10
 options ndots:5
 ```
 
-Get information of `kube-dns`.
+读取 `kube-dns`信息：
 
-```
-root@cka001:~# kubectl describe service kube-dns -n kube-system
+```bash
+$ kubectl describe service kube-dns -n kube-system
 Name:              kube-dns
 Namespace:         kube-system
 Labels:            k8s-app=kube-dns
@@ -757,84 +738,88 @@ Events:            <none>
 
 ### Endpoints
 
-Endpoints is a collection of endpoints that implement the actual service.
+Endpoints是一组实现实际服务的端点集合。
 
-When a service is created, it associates with a Endpoint object, `kubectl get endpoints <service_name>`.
+当创建服务时，它会与一个Endpoint对象相关联，可以使用命令 `kubectl get endpoints <service_name>` 获取。
 
-A list of matched Pod by service label is maintained as Endpoint object, add new matched Pods and remove not matched Pods.
+匹配服务标签的Pod列表维护为Endpoint对象，添加新的匹配Pod并删除不匹配的Pod。
 
-## Config and Storage Resources
+## 配置和存储资源
 
-### Volumes
+### 卷
 
 #### emptyDir
 
-An `emptyDir` volume is first created when a Pod is assigned to a node, and exists as long as that Pod is running on that node. 
+`emptyDir`卷是在Pod分配到节点时首先创建的，并且只要该Pod在该节点上运行，它就会存在。
 
-The `emptyDir` volume is initially empty. 
+`emptyDir`卷最初为空。
 
-All containers in the Pod can read and write the same files in the `emptyDir` volume, though that volume can be mounted at the same or different paths in each container. 
+Pod中的所有容器都可以读取和写入`emptyDir`卷中的相同文件，尽管该卷可以在每个容器中以相同或不同的路径挂载。
 
-When a Pod is removed from a node for any reason, the data in the `emptyDir` is deleted permanently.
+当由于任何原因从节点中删除Pod时，`emptyDir`中的数据将永久删除。
 
-A container crashing does not remove a Pod from a node. The data in an `emptyDir` volume is safe across container crashes.
+容器崩溃不会将Pod从节点中删除。 `emptyDir`卷中的数据可以在容器崩溃时安全保留。
 
-Usage:
+用途：
 
-* scratch space, such as for a disk-based merge sort
-* checkpointing a long computation for recovery from crashes
-* holding files that a content-manager container fetches while a webserver container serves the data
+- 临时空间，例如基于磁盘的归并排序
+- 为了从崩溃中恢复而进行的长时间计算的检查点
+- 保存内容管理器容器提取的文件，同时Web服务器容器提供数据
+
+
 
 #### hostPath
 
-A `hostPath` volume mounts a file or directory from the host node's filesystem into your Pod. 
-This is not something that most Pods will need, but it offers a powerful escape hatch for some applications.
+`hostPath` 卷将主机节点文件系统中的文件或目录挂载到 Pod 中。这不是大多数 Pod 都需要的，但对于某些应用程序来说，它提供了一个强大的逃生口。
 
-`hostPath` volumes present many security risks, and it is a best practice to avoid the use of HostPaths when possible. 
-When a HostPath volume MUST be used, it should be scoped to only the required file or directory, and mounted as ReadOnly.
+`hostPath` 卷存在许多安全风险，因此在可能的情况下最好避免使用 HostPath。当必须使用 HostPath 卷时，应将其范围限定为仅所需的文件或目录，并以只读方式挂载。
 
-If restricting HostPath access to specific directories through AdmissionPolicy, volumeMounts MUST be required to use readOnly mounts for the policy to be effective.
+如果通过 AdmissionPolicy 限制 HostPath 访问特定目录，则必须要求 volumeMounts 使用 readOnly 挂载，以使策略生效。
 
-Usage: 
+用途：
 
-* Running together with DaemonSet, e.g., EFK Fluentd mount log directory of local host in order to collect host log information.
-* Running on a specific node by using `hostPath` volumne, which can get high performance disk I/O.
-* Running a container that needs access to Docker internals; use a hostPath of `/var/lib/docker`.
-* Running cAdvisor in a container; use a hostPath of `/sys`.
-* Allowing a Pod to specify whether a given hostPath should exist prior to the Pod running, whether it should be created, and what it should exist as.
+- 与 DaemonSet 一起运行，例如，EFK Fluentd 挂载本地主机的日志目录以收集主机日志信息。
+- 通过使用 `hostPath` 卷在特定节点上运行，可以获得高性能的磁盘 I/O。
+- 运行需要访问 Docker 内部的容器；使用 `/var/lib/docker` 的 hostPath。
+- 在容器中运行 cAdvisor；使用 `/sys` 的 hostPath。
+- 允许 Pod 指定给定的 hostPath 是否应该在 Pod 运行之前存在，是否应该创建它以及它应该存在的内容。
+
+
 
 ### Storage Class
 
-Procedure of StorageClass deployment and implementation:
+StorageClass 部署和实现的步骤如下：
 
-* Create Kubernetes cluster and backend storage.
-* Make sure the provisioner/plugin is ready in Kubernetes.
-* Create a StorageClass object to link to backend storage. The StorageClass will create related PV automatically.
-* Create a PVC object to link to the StorageClass we created.
-* Deploy a Pod and use the PVC volume.
+- 创建 Kubernetes 集群和后端存储。
+- 确保 Kubernetes 中的 provisioner/plugin 可用。
+- 创建一个 StorageClass 对象并将其链接到后端存储。StorageClass 将自动创建相关的 PV。
+- 创建一个 PVC 对象并将其链接到我们创建的 StorageClass。
+- 部署一个 Pod 并使用 PVC 卷。
 
 ### PV
 
-PV Recycle Policy.
+PV回收策略：
 
-* Retain.
-* Delete.
-* Recycle. 
+- 保留 (Retain)
+- 删除 (Delete)
+- 回收 (Recycle)
 
-PV in-tree type:
+PV in-tree类型：
 
-* hostPath
-* local
-* NFS
-* CSI
+- hostPath
+- local
+- NFS
+- CSI
 
 ### Access Modes
 
-`spec.accessModes` defines mount option of a PV:
 
-* ReadWriteOnce(RWO). A PV can be mounted only to a PVC with read/write mode, like block device.
-* ReadWriteMany(RWM). A PV can be mounted to more than one PVC with read/write mode, like NFS.
-* ReadOnlyMany(ROM). A PV can be mounted to more than one PVC with read only mode.
-* ReadWriteOncePod (RWOP). Only support CSI type PV, can be mounted by single Pod.
 
-A PV can only be set with one option. Pod mount PVC, not PV.
+Access Modes（访问模式）中，`spec.accessModes` 定义了 PV 的挂载选项：
+
+- ReadWriteOnce(RWO)：一个 PV 只能被一个读写模式的 PVC 挂载，类似于块设备。
+- ReadWriteMany(RWM)：一个 PV 可以被多个读写模式的 PVC 挂载，例如 NFS。
+- ReadOnlyMany(ROM)：一个 PV 可以被多个只读模式的 PVC 挂载。
+- ReadWriteOncePod(RWOP)：只支持 CSI 类型的 PV，只能被单个 Pod 挂载。
+
+一个 PV 只能设置一种选项。Pod 挂载 PVC，而不是 PV。
