@@ -16,11 +16,11 @@ Docker
 
 基础知识
 
-- [Memo](./foundamentals/memo.md)
+- [Kubernetes随笔](./foundamentals/memo.md)
 
-- [Overview](./foundamentals/overview.md)
+- [Kubernetes集群概览](./foundamentals/overview.md)
 
-- [kubectl basics](./foundamentals/basics.md)
+- [kubectl基础](./foundamentals/basics.md)
 
 核心概念
 

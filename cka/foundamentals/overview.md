@@ -1,17 +1,21 @@
-# Cluster Overview
+# CKA自学笔记6:Kubernetes集群概览
 
-## Contents
+## 摘要
 
-- [Container Layer](#container-layer)
-- [Kubernetes Layer](#kubernetes-layer)
+包含下面内容：
 
-!!! Information
-    For environment setup, refer to [Installation on Aliyun Ubuntu](../installation/aliyun-ubuntu.md)
+- [容器层](#container-layer)
+- [Kubernetes层](#kubernetes-layer)
 
-## Container Layer
+提示：
 
-!!! Scenario
-    Use Containerd service to manage our images and containers via command `nerdctl`, which is same concept with Docker.
+后续实验环境都是使用在阿里云部署的Ubuntu三节点集群，三个节点分别为 `cka001`、`cka002` 和 `cka003`。
+
+## 容器层
+
+场景：
+
+使用Containerd服务，通过命令`nerdctl`来管理我们的镜像和容器，这与Docker的概念相同。
 
     * Get namespace.
     * Get containers.
@@ -20,24 +24,30 @@
     * Get overall status.
     * Get network status.
 
-Demo: 
+演示：
 
-Get namespaces.
-```console
+读取命名空间namespaces。
+
+```bash
 sudo nerdctl namespace ls
 ```
-Result
-```
+
+运行结果：
+
+```console
 NAME      CONTAINERS    IMAGES    VOLUMES    LABELS
 k8s.io    21            30        0      
 ```
 
-Get containers under specific namespace `k8s.io`.
-```console
+读取命名空间 `k8s.io`下的容器。
+
+```bash
 sudo nerdctl -n k8s.io ps
 ```
-Result
-```
+
+运行结果：
+
+```console
 CONTAINER ID    IMAGE                                                                      COMMAND                   CREATED         STATUS    PORTS    NAMES
 0a3625f22f65    registry.aliyuncs.com/google_containers/pause:3.6                          "/pause"                  16 hours ago    Up                 k8s://kube-system/coredns-74586cf9b6-4jwmk
 121af2ecd1a1    registry.aliyuncs.com/google_containers/coredns:v1.8.6                     "/coredns -conf /etc…"    16 hours ago    Up                 k8s://kube-system/coredns-74586cf9b6-c5mll/coredns
@@ -57,30 +67,35 @@ e0c59abadf2e    registry.aliyuncs.com/google_containers/pause:3.6               
 e0d2e5f6ccff    registry.aliyuncs.com/google_containers/pause:3.6                          "/pause"                  16 hours ago    Up                 k8s://kube-system/kube-apiserver-cka001
 ```
 
+读取命名空间 `k8s.io`下的镜像。
 
-Get images.
-```console
+```bash
 sudo nerdctl -n k8s.io image ls -a
 ```
 
-Get volumes. After inintial installation, no volume within namespaces.
-```console
+读取命名空间 `k8s.io`下的卷Volume。初始化安装后，该命名空间下没有任何卷。
+
+```bash
 sudo nerdctl -n k8s.io volume ls
 ```
 
-Get overall status
-```console
+读取集群状态。
+
+```bash
 sudo nerdctl stats
 ```
 
-Get network status.
-```console
+读取网络状态。
+
+```bash
 sudo nerdctl network ls
 sudo nerdctl network inspect bridge
 sudo nerdctl network inspect k8s-pod-network
 ```
-Result
-```
+
+运行结果：
+
+```console
 NETWORK ID    NAME               FILE
               k8s-pod-network    /etc/cni/net.d/10-calico.conflist
 0             bridge             /etc/cni/net.d/nerdctl-bridge.conflist
@@ -91,7 +106,10 @@ NETWORK ID    NAME               FILE
 Get network interface in host `cka001` with command `ip addr list`.
 
 IP pool of `10.4.0.1/24` is `ipam` and defined in `/etc/cni/net.d/nerdctl-bridge.conflist`.
-```
+
+使用命令`ip addr list`获取主机`cka001`的网络接口。`10.4.0.1/24`的IP池是`ipam`，在`/etc/cni/net.d/nerdctl-bridge.conflist`中定义。
+
+```console
 lo                   : inet 127.0.0.1/8 qlen 1000
 eth0                 : inet <cka001_ip>/24 brd xxx.xxx.xxx.255 scope global dynamic eth0
 tunl0@NONE           : inet 10.244.228.192/32 scope global tunl0
@@ -99,33 +117,36 @@ cali96e32d88db2@if4  :
 cali93613212490@if4  :
 ```
 
+`nerdctl-bridge.conflist`文件的作用是：
 
+- 定义了nerdctl使用的默认桥接CNI网络的配置，包括网络名称、子网、网关、IP分配策略等[1](https://github.com/containerd/nerdctl/blob/main/README.md) ，[2](https://github.com/containerd/nerdctl/blob/main/docs/cni.md)。
+- 使得nerdctl可以使用docker run -it --rm alpine这样的命令来运行一个容器，并自动分配一个10.4.0.0/24网段的IP地址[1](https://github.com/containerd/nerdctl/blob/main/README.md)，[3](https://github.com/containerd/nerdctl)。
+- 使得nerdctl可以支持一些基本的CNI插件，如bridge, portmap, firewall, tuning[1](https://github.com/containerd/nerdctl/blob/main/README.md)，[2](https://github.com/containerd/nerdctl/blob/main/docs/cni.md)。
 
+## Kubernetes层
 
+场景：
+    * 节点Nodes
+    * 命名空间Namespaces
+    * 系统Pods
 
-## Kubernetes Layer
+演示：
 
-!!! Scenario
-    * Nodes
-    * Namespaces
-    * System Pods
+读取节点状态：
 
-Demo:
-
-!!! information
-    In the demo, there are three nodes, `cka001`, `cka002`, and `cka003`.
-
-Get nodes status.
-```console
+```bash
 kubectl get node -o wide
 ```
 
-There are four initial namespaces across three nodes.
-```console
+在三个节点上有四个初始的命名空间。
+
+```bash
 kubectl get namespace -A
 ```
-Result
-```
+
+运行结果：
+
+```bash
 NAME              STATUS   AGE
 default           Active   56m
 kube-node-lease   Active   56m
@@ -133,12 +154,15 @@ kube-public       Active   56m
 kube-system       Active   56m
 ```
 
-There are some initial pods. 
-```console
+在三个节点上的初始化Pod。
+
+```bash
 kubectl get pod -A -o wide
 ```
-Result
-```
+
+运行结果：
+
+```console
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE   NODE     NOMINATED NODE   READINESS GATES
 kube-system   calico-kube-controllers-555bc4b957-l8bn2   1/1     Running   0          15h   cka003   <none>           <none>
 kube-system   calico-node-255pc                          1/1     Running   0          15h   cka003   <none>           <none>
@@ -155,9 +179,9 @@ kube-system   kube-proxy-qs6rf                           1/1     Running   0    
 kube-system   kube-scheduler-cka001                      1/1     Running   0          15h   cka001   <none>           <none>
 ```
 
-!!! Summary 
-    Below shows the relationship between containers and pods. 
-    
+总结： 
+下面列出了初始集群中主节点和所有节点中所包含的容器和Pod的关系。 
+
     * Master node:
         * CoreDNS: 2 Pod
         * etcd: 1 Pod
@@ -169,16 +193,8 @@ kube-system   kube-scheduler-cka001                      1/1     Running   0    
         * Calico Node: 1 Pod each
         * Proxy: 1 Pod each
 
+参考：
 
+- pause容器：[文章1](https://zhuanlan.zhihu.com/p/464712164) and [文章2](https://cloud.tencent.com/developer/article/1583919).
 
-!!! Reference
-    - Container pause: [article](https://zhuanlan.zhihu.com/p/464712164) and [artical](https://cloud.tencent.com/developer/article/1583919).
-    - [nerdctl](https://github.com/containerd/nerdctl)
-
-
-
-
-
-
-
-
+- [nerdctl](https://github.com/containerd/nerdctl)

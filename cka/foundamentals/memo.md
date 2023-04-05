@@ -37,45 +37,45 @@
 Kubernetes组件: 
 
 * 控制平面组件 Control Plane Components
-    * kube-apiserver: 
-        * 查询和操作 Kubernetes 中对象的状态。
-        * 充当所有资源之间的通信中心（communication hub）。
-        * 提供集群安全身份验证、授权和角色分配。
-        * 是唯一能连接到 etcd 的组件。
-    * etcd: 
-        * 所有 Kubernetes 对象都存储在 `etcd` 中。
-        * Kubernetes 对象是 Kubernetes 系统中的持久实体(entities)，用于表示集群的状态。
-    * kube-scheduler: 
-        * 监视没有分配节点的新创建的 Pod，并为它们选择一个节点来运行。
-    * kube-controller-manager: 
-        * 运行控制器进程。
-        * *Node controller*: 负责警示和响应节点的故障。
-        * *Job controller*: 监视表示一次性任务的 Job 对象，然后创建 Pod 来完成这些任务。
-        * *Endpoints controller*: 填充 Endpoints 对象（即将 Service 和 Pod 连接起来）。
-        * *Service Account & Token controllers*: 为新命名空间创建默认帐户和 API 访问令牌。
-    * cloud-controller-manager: 
-        * 嵌入云特定的控制逻辑，仅运行特定于我们选择的云提供商的控制器，无需自己的基础设施和学习环境。
-        * *Node controller*: 用于检查云提供商，以确定节点在在它停止响应后是否已在云中被删除。
-        * *Route controller*: 用于在底层云基础架构中设置路由。
-        * *Service controller*: 用于创建、更新和删除云提供商负载均衡器。
+  * kube-apiserver: 
+    * 查询和操作 Kubernetes 中对象的状态。
+    * 充当所有资源之间的通信中心（communication hub）。
+    * 提供集群安全身份验证、授权和角色分配。
+    * 是唯一能连接到 etcd 的组件。
+  * etcd: 
+    * 所有 Kubernetes 对象都存储在 `etcd` 中。
+    * Kubernetes 对象是 Kubernetes 系统中的持久实体(entities)，用于表示集群的状态。
+  * kube-scheduler: 
+    * 监视没有分配节点的新创建的 Pod，并为它们选择一个节点来运行。
+  * kube-controller-manager: 
+    * 运行控制器进程。
+    * *Node controller*: 负责警示和响应节点的故障。
+    * *Job controller*: 监视表示一次性任务的 Job 对象，然后创建 Pod 来完成这些任务。
+    * *Endpoints controller*: 填充 Endpoints 对象（即将 Service 和 Pod 连接起来）。
+    * *Service Account & Token controllers*: 为新命名空间创建默认帐户和 API 访问令牌。
+  * cloud-controller-manager: 
+    * 嵌入云特定的控制逻辑，仅运行特定于我们选择的云提供商的控制器，无需自己的基础设施和学习环境。
+    * *Node controller*: 用于检查云提供商，以确定节点在在它停止响应后是否已在云中被删除。
+    * *Route controller*: 用于在底层云基础架构中设置路由。
+    * *Service controller*: 用于创建、更新和删除云提供商负载均衡器。
 * 节点组件 Node Components
-    * kubelet: 
-        * 在集群中每个节点上运行的代理。 
-        * 管理节点。它确保 Pod 中运行容器。`kubelet` 向 APIServer 注册和更新节点信息，APIServer 将它们存储到 `etcd` 中。
-        * 管理 Pod。通过 APIServer 监视 Pod，并对 Pod 或 Pod 中的容器采取行动。
-        * 在容器级别进行健康检查。
-    * kube-proxy: 
-        * 是在集群中每个节点上运行的网络代理。
-            * iptables
-            * ipvs
-        * 维护节点上的网络规则。
-    * 容器运行时Container runtime：
-        * 负责运行容器的软件。
+  * kubelet: 
+    * 在集群中每个节点上运行的代理。 
+    * 管理节点。它确保 Pod 中运行容器。`kubelet` 向 APIServer 注册和更新节点信息，APIServer 将它们存储到 `etcd` 中。
+    * 管理 Pod。通过 APIServer 监视 Pod，并对 Pod 或 Pod 中的容器采取行动。
+    * 在容器级别进行健康检查。
+  * kube-proxy: 
+    * 是在集群中每个节点上运行的网络代理。
+      * iptables
+      * ipvs
+    * 维护节点上的网络规则。
+  * 容器运行时Container runtime：
+    * 负责运行容器的软件。
 * 插件Addons
-    * DNS: 是 DNS 服务器，是所有 Kubernetes 集群所必需的。
-    * Web UI（仪表盘）：用于 Kubernetes 集群的基于 Web 的用户界面。
-    * 容器资源监控：记录有关集中式数据库中容器的通用时间序列度量。
-    * Cluster-level Logging：负责将容器日志保存到具有搜索/浏览接口的中央日志存储中。
+  * DNS: 是 DNS 服务器，是所有 Kubernetes 集群所必需的。
+  * Web UI（仪表盘）：用于 Kubernetes 集群的基于 Web 的用户界面。
+  * 容器资源监控：记录有关集中式数据库中容器的通用时间序列度量。
+  * Cluster-level Logging：负责将容器日志保存到具有搜索/浏览接口的中央日志存储中。
 
 可扩展性：
 
@@ -99,11 +99,11 @@ Kubernetes API允许我们查询和操作Kubernetes中API对象的状态（例�
 Kubernetes API：
 
 - OpenAPI规范
-    - OpenAPI V2
-    - OpenAPI V3
+  - OpenAPI V2
+  - OpenAPI V3
 - 持久性。Kubernetes通过将对象的序列化状态写入etcd来存储它们。
 - API组和版本控制。版本控制是在API级别进行的。API资源通过它们的API组、资源类型、命名空间（用于命名空间资源）和名称进行区分。
-    - API更改
+  - API更改
 - API扩展
 
 #### API Version
@@ -113,21 +113,21 @@ API版本和软件版本间存在间接关系。API和发布版本计划描述�
 以下是每个级别的摘要：
 
 - Alpha：
-    - 版本名称包含alpha（例如，v1alpha1）。
-    - 软件可能包含错误。启用功能可能会暴露错误。某些功能可能默认禁用。
-    - 对于某些功能的支持可以随时取消，而不会提前通知。
-    - API可能会在以后的软件发布中以不兼容的方式更改，而不会提前通知。
-    - 由于错误风险增加和长期支持不足，建议仅在短暂的测试集群中使用该软件。
+  - 版本名称包含alpha（例如，v1alpha1）。
+  - 软件可能包含错误。启用功能可能会暴露错误。某些功能可能默认禁用。
+  - 对于某些功能的支持可以随时取消，而不会提前通知。
+  - API可能会在以后的软件发布中以不兼容的方式更改，而不会提前通知。
+  - 由于错误风险增加和长期支持不足，建议仅在短暂的测试集群中使用该软件。
 - Beta：
-    - 版本名称包含beta（例如，v2beta3）。
-    - 软件经过充分测试。启用功能被认为是安全的。某些功能默认启用。
-    - 对于某些功能的支持不会取消，但细节可能会更改。
-    - 对象的模式和/或语义可能会在后续的Beta或稳定版发布中以不兼容的方式更改。当发生这种情况时，将提供迁移说明。模式更改可能需要删除、编辑和重新创建  API对象。编辑过程可能不简单。迁移可能需要停机，以便依赖于该功能的应用程序。
-    - 不建议将该软件用于生产用途。后续的发布可能会引入不兼容的更改。如果您有多个可以独立升级的集群，则可以放宽此限制。
-    - 注意：请尝试beta功能并提供反馈。功能退出beta后，可能不实际再进行更改。
+  - 版本名称包含beta（例如，v2beta3）。
+  - 软件经过充分测试。启用功能被认为是安全的。某些功能默认启用。
+  - 对于某些功能的支持不会取消，但细节可能会更改。
+  - 对象的模式和/或语义可能会在后续的Beta或稳定版发布中以不兼容的方式更改。当发生这种情况时，将提供迁移说明。模式更改可能需要删除、编辑和重新创建  API对象。编辑过程可能不简单。迁移可能需要停机，以便依赖于该功能的应用程序。
+  - 不建议将该软件用于生产用途。后续的发布可能会引入不兼容的更改。如果您有多个可以独立升级的集群，则可以放宽此限制。
+  - 注意：请尝试beta功能并提供反馈。功能退出beta后，可能不实际再进行更改。
 - 稳定版：
-    - 版本名称为vX，其中X是整数。
-    - 功能的稳定版本出现在发布的软件中的许多后续版本中。
+  - 版本名称为vX，其中X是整数。
+  - 功能的稳定版本出现在发布的软件中的许多后续版本中。
 
 读取当前API的版本命令：
 
@@ -142,7 +142,7 @@ kubectl api-resources
 Kubernetes有几个API组：
 
 - 核心组（也称为遗留legacy）位于REST路径 `/api/v1`。
-    - 核心组不作为apiVersion字段的一部分指定，例如 apiVersion: v1。
+  - 核心组不作为apiVersion字段的一部分指定，例如 apiVersion: v1。
 - 命名组位于REST路径 `/apis/$GROUP_NAME/$VERSION`，并使用 apiVersion: `$GROUP_NAME/$VERSION`（例如 apiVersion: batch/v1）。
 
 ### Kubernetes对象
