@@ -30,7 +30,8 @@ VMWare 设置
 
 ```bash
 sudo adduser vagrant
-sudo usermod -aG adm,sudo,syslog,cdrom,dip,plugdev,lxd,root vagrant
+sudo usermod -g sudo vagrant
+sudo usermod -a -G root vagrant
 sudo passwd vagrant
 ```
 
@@ -443,13 +444,13 @@ sudo kubeadm init \
   --pod-network-cidr=10.244.0.0/16 \
   --service-cidr=192.244.0.0/16 \
   --image-repository=registry.aliyuncs.com/google_containers \
-  --kubernetes-version=v1.24.1
+  --kubernetes-version=v1.24.0
 
 sudo kubeadm init \
   --pod-network-cidr=10.244.0.0/16 \
   --service-cidr=192.244.0.0/16 \
   --image-repository=registry.aliyuncs.com/google_containers \
-  --kubernetes-version=v1.24.1
+  --kubernetes-version=v1.24.0
 ```
 
 ### kubeconfig文件
@@ -514,17 +515,18 @@ CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPAC
 
 参考安装指导 [End-to-end Calico installation](https://projectcalico.docs.tigera.io/getting-started/kubernetes/hardway/) 。
 
+快速安装手册 [QuickStart](https://docs.tigera.io/calico/latest/getting-started/kubernetes/quickstart)
+
 安装 Calico：
 
 ```bash
-curl https://docs.projectcalico.org/manifests/calico.yaml -O
-kubectl apply -f calico.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/tigera-operator.yaml
 ```
 
 运行结果：
 
 ```console
-configmap/calico-config created
+namespace/tigera-operator created
 customresourcedefinition.apiextensions.k8s.io/bgpconfigurations.crd.projectcalico.org created
 customresourcedefinition.apiextensions.k8s.io/bgppeers.crd.projectcalico.org created
 customresourcedefinition.apiextensions.k8s.io/blockaffinities.crd.projectcalico.org created
@@ -542,15 +544,27 @@ customresourcedefinition.apiextensions.k8s.io/ipreservations.crd.projectcalico.o
 customresourcedefinition.apiextensions.k8s.io/kubecontrollersconfigurations.crd.projectcalico.org created
 customresourcedefinition.apiextensions.k8s.io/networkpolicies.crd.projectcalico.org created
 customresourcedefinition.apiextensions.k8s.io/networksets.crd.projectcalico.org created
-clusterrole.rbac.authorization.k8s.io/calico-kube-controllers created
-clusterrolebinding.rbac.authorization.k8s.io/calico-kube-controllers created
-clusterrole.rbac.authorization.k8s.io/calico-node created
-clusterrolebinding.rbac.authorization.k8s.io/calico-node created
-daemonset.apps/calico-node created
-serviceaccount/calico-node created
-deployment.apps/calico-kube-controllers created
-serviceaccount/calico-kube-controllers created
-poddisruptionbudget.policy/calico-kube-controllers created
+customresourcedefinition.apiextensions.k8s.io/apiservers.operator.tigera.io created
+customresourcedefinition.apiextensions.k8s.io/imagesets.operator.tigera.io created
+customresourcedefinition.apiextensions.k8s.io/installations.operator.tigera.io created
+customresourcedefinition.apiextensions.k8s.io/tigerastatuses.operator.tigera.io created
+serviceaccount/tigera-operator created
+clusterrole.rbac.authorization.k8s.io/tigera-operator created
+clusterrolebinding.rbac.authorization.k8s.io/tigera-operator created
+deployment.apps/tigera-operator created
+```
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/calicoctl.yaml
+```
+
+运行结果：
+
+```console
+serviceaccount/calicoctl created
+pod/calicoctl created
+clusterrole.rbac.authorization.k8s.io/calicoctl created
+clusterrolebinding.rbac.authorization.k8s.io/calicoctl created
 ```
 
 验证Calico的状态。Calico的初始化过程可能需要几分钟时间完成。
