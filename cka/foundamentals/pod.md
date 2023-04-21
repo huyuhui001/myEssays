@@ -1,5 +1,16 @@
 # CKA自学笔记8:Pod
 
+## 摘要
+
+练习目标：
+
+* 创建pod
+* 追踪pod
+* pod标签
+* 静态pod
+* 多容器pod
+* 含初始化容器的pod
+
 ## 创建Pod
 
 创建Pod `my-first-podl`。
@@ -54,111 +65,116 @@ kubectl explain pod.spec.containers
 kubectl explain pod.spec.containers.name
 ```
 
-## Label pod
+## pod的标签
 
-Get pod's label with option `--show-labels`.
+通过选项 `--show-labels`来获得pod的标签。
 
-```console
+```bash
 kubectl get pods
 kubectl get pods --show-labels
 ```
 
-Add two labels to the pod `pod my-first-pod`.
+给pod `pod my-first-pod`添加2个标签。
 
-```console
+```bash
 kubectl label pod my-first-pod nginx=mainline
 kubectl label pod my-first-pod env=demo
 kubectl get pods --show-labels
 ```
 
-Search pod by labels.
+通过标签来查找pod。
 
-```console
+```bash
 kubectl get pod -l env=demo
 kubectl get pod -l env=demo,nginx=mainline
 kubectl get pod -l env=training
 ```
 
-Remove label
+移除pod的标签。
 
-```console
+```bash
 kubectl label pods my-first-pod env-
 kubectl get pods --show-labels
 ```
 
-Describe pod.
+描述 Pod。
 
-```console
+```bash
 kubectl describe pod my-first-pod
 ```
 
-Delete pod.
-Run `watch kubectl get pods` to monitor the pod status. 
+删除pod.
+运行命令 `watch kubectl get pods` 来获取pod的状态。
 
-```console
+```bash
 kubectl delete pod my-first-pod
 watch kubectl get pods
 ```
 
-## Static Pod
+## 静态pod
 
-!!! scenario
-    * Create a static pod.
-    * `kubectl` will automatically check yaml file in `/etc/kubernetes/manifests/` and create the static pod once it's detected.
+演示场景：
 
-Demo: 
+* 创建一个静态pod。
 
-Some system static Pods are already in place.
+* `kubectl` 会自动检查 `/etc/kubernetes/manifests/` 中的 YAML 文件，并在检测到后创建静态 Pod。
 
-```console
+演示：
+
+查看系统初始化后已经存在的静态pod。
+
+```bash
 ll /etc/kubernetes/manifests/
 ```
 
-Result
+运行结果：
 
-```
+```console
 -rw------- 1 root root 2292 Jul 23 10:45 etcd.yaml
 -rw------- 1 root root 3889 Jul 23 10:45 kube-apiserver.yaml
 -rw------- 1 root root 3395 Jul 23 10:45 kube-controller-manager.yaml
 -rw------- 1 root root 1464 Jul 23 10:45 kube-scheduler.yaml
 ```
 
-Create yaml file `my-nginx.yaml` in directory `/etc/kubernetes/manifests/`. Once the file is created, the static pod `my-nginx` is created automatically.
+在`/etc/kubernetes/manifests/`目录中创建yaml文件`my-nginx.yaml`，一旦文件创建完成，静态Pod `my-nginx` 将会被自动创建。
 
-```console
+```bash
 kubectl run my-nginx --image=nginx:mainline --dry-run=client -n default -oyaml | sudo tee /etc/kubernetes/manifests/my-nginx.yaml
 ```
 
-Check status of the Pod `my-nginx`. The node name `cka001` is part of the Pod name, which means the Pod is running on node `cka001`.
+检查 Pod `my-nginx` 的状态。Pod 名称中包含节点名称 `cka001`，这意味着该 Pod 正在节点 `cka001` 上运行。
 
-```console
+```bash
 kubectl get pod -o wide
 ```
 
-Result
+运行结果：
 
-```
+```console
 NAME              READY   STATUS    RESTARTS   AGE   IP               NODE     NOMINATED NODE   READINESS GATES
 my-nginx-cka001   1/1     Running   0          20s   10.244.228.196   cka001   <none>           <none>
 ```
 
-Delete the yaml file `/etc/kubernetes/manifests/my-nginx.yaml`, the static pod will be deleted automatically.
+删除 `/etc/kubernetes/manifests/my-nginx.yaml` 这个 yaml 文件，对应的静态 Pod `my-nginx` 将会被自动删除。
 
-```console
+```bash
 sudo rm /etc/kubernetes/manifests/my-nginx.yaml 
 ```
 
-## Multi-Container Pod
+## 多容器Pod
 
-!!! Scenario
-    * Create Multi-Container Pod
-    * Describe the Pod
-    * Check the log of Pod
-    * Check the log of Containers
+演示场景：
 
-Create a Pod `multi-container-pod` with multiple container `container-1-nginx` and `container-2-alpine`.
+* 创建多容器Pod
+* 描述该Pod
+* 检查Pod的日志
+* 检查容器的日志
 
-```console
+演示：
+
+创建一个名为`multi-container-pod`的Pod，包含多个容器：`container-1-nginx`和`container-2-alpine`。
+
+```yaml
 kubectl apply -f - << EOF
 apiVersion: v1
 kind: Pod
@@ -176,28 +192,27 @@ spec:
 EOF
 ```
 
-Get the status.
+获取pod状态。
 
-```console
+```bash
 kubectl get pod multi-container-pod
 ```
 
-Result
-
-```
-NAME                  READY   STATUS    RESTARTS   AGE
-multi-container-pod   2/2     Running   0          81s
-```
-
-Get details of the pod.
+运行结果
 
 ```console
+
+```
+
+获取pod的详细信息。
+
+```bash
 kubectl describe pod multi-container-pod
 ```
 
-Result
+运行结果：
 
-```
+```console
 .......
 Events:
   Type    Reason     Age   From               Message
@@ -213,49 +228,47 @@ Events:
   Normal  Started    14s   kubelet            Started container container-2-alpine
 ```
 
-For multi-container pod, container name is needed if we want to get log of pod via command `kubectl logs <pod_name> <container_name>`.
+对于多容器 Pod，如果我们想通过命令 `kubectl logs <pod_name> <container_name>` 获取 Pod 的日志，需要指定容器名称。如果不指定容器名称，将会收到错误信息。
 
-Without the container name, we receive error.
-
-```console
+```bash
 kubectl logs multi-container-pod
 ```
 
-Result
+运行结果
 
-```
+```bash
 error: a container name must be specified for pod multi-container-pod, choose one of: [container-1-nginx container-2-alpine]
 ```
 
-With specified container name, we get the log info.
+指定容器名称，我们可以得到对应的日志信息。
 
-```console
+```bash
 kubectl logs multi-container-pod container-1-nginx
 ```
 
-Result
+运行结果
 
-```
+```bash
 ......
 ::1 - - [23/Jul/2022:04:06:37 +0000] "GET / HTTP/1.1" 200 615 "-" "Wget" "-"
 ```
 
-Same if we need specify container name to login into the pod via command `kubectl exec -it <pod_name> -c <container_name> -- <commands>`.
+如果我们需要使用命令 `kubectl exec -it <pod_name> -c <container_name> -- <commands>` 登录到 Pod 中，同样需要指定容器名称。如果没有指定容器名称，会出现错误。
 
-```console
+```bash
 kubectl exec -it multi-container-pod -c container-1-nginx -- /bin/bash
 root@multi-container-pod:/# ls
 ```
 
-Clean up
+删除上面练习中创建的pod。
 
-```console
+```bash
 kubectl delete pod multi-container-pod
 ```
 
-Quick reference of a simple yaml file to create Multiple Containers.
+下面是一个基本的yaml文件用来创建多容器pod。
 
-```console
+```yaml
 kubectl apply -f - << EOF
 apiVersion: v1
 kind: Pod
@@ -272,16 +285,17 @@ spec:
 EOF
 ```
 
-!!! Scenario
-    * Create a Pod `my-busybox` with a container `container-1-busybox`. The container will write message to file `/var/log/my-pod-busybox.log`.
-    * Add another container `container-2-busybox` (Sidecar) to the Pod `my-busybox`. The sidecar container read message from file `/var/log/my-pod-busybox.log`.
-    * Tips: create a Volume to store the log file, which is shared with two containers.
+演示场景：
 
-Demo:
+* 创建一个名为`my-busybox`的Pod，并在其中添加一个名为`container-1-busybox`的容器。该容器将把消息写入到文件`/var/log/my-pod-busybox.log`中。
+* 向Pod `my-busybox`中添加另一个容器`container-2-busybox`（Sidecar）。Sidecar容器从文件`/var/log/my-pod-busybox.log`中读取消息。
+* 提示：创建一个Volume来存储日志文件，并与两个容器共享。
 
-Create a Pod `my-busybox` with a container `container-1-busybox`.
+演示：
 
-```console
+创建一个名为 `my-busybox` 的 Pod，其中包含一个容器 `container-1-busybox`。
+
+```bash
 kubectl apply -f - << EOF
 apiVersion: v1
 kind: Pod
@@ -305,20 +319,20 @@ spec:
 EOF
 ```
 
-Search `emptyDir` in the Kubernetes documetation.
-Refer to below template for emptyDir via https://kubernetes.io/zh-cn/docs/concepts/storage/volumes/
+在 Kubernetes 文档中搜索 `emptyDir`。
+参考以下模板用于 `emptyDir`：<https://kubernetes.io/zh-cn/docs/concepts/storage/volumes/>
 
-Add below new features into the Pod
+将以下新功能添加到 Pod 中：
 
-* Volume:
-  * volume name: `logfile`
-  * type: `emptyDir`
-* Update existing container:
+* Volume：
+  * 卷名称：`logfile`
+  * 类型：`emptyDir`
+* 更新现有容器：
   * name: `container-1-busybox`
   * volumeMounts
     * name: `logfile`
     * mounthPath: `/var/log`
-* Add new container:
+* 添加新容器：
   * name: `container-2-busybox`
   * image: busybox
   * args: ['/bin/sh', '-c', 'tail -n+1 -f /var/log/my-pod-busybox.log']
@@ -326,7 +340,7 @@ Add below new features into the Pod
     * name: `logfile`
     * mountPath: `/var/log`
 
-```console
+```bash
 kubectl get pod my-busybox -o yaml > my-busybox.yaml
 vi my-busybox.yaml
 kubectl delete pod my-busybox 
@@ -334,9 +348,9 @@ kubectl apply -f my-busybox.yaml
 kubectl logs my-busybox -c container-2-busybox
 ```
 
-The final file `my-busybox.yaml` looks like below.
+更新后的文件`my-busybox.yaml`如下：
 
-```console
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -460,40 +474,40 @@ status:
   startTime: "2022-07-29T22:58:27Z"
 ```
 
-Clean up:
+清理上面练习中创建的pod。
 
-```console
+```bash
 kubectl delete pod my-busybox
 ```
 
-## initContainer Pod
+## 含初始化容器Pod
 
-!!! Scenario
-    * Create Pod `myapp-pod` that has two init containers. 
-        * `myapp-container`
-        * `init-mydb`
-    * Create two Services.
-        * `myservice`
-        * `mydb`
+演示场景：
 
-!!! Conclusion
-    * `myapp-container` waits for Service `myservice` up in order to resolve the name `myservice.dev.svc.cluster.local`
-    * `init-mydb` waits for Service `mydb` up in order to resolve the name `mydb.dev.svc.cluster.local`.
+* 创建拥有两个初始化容器的 Pod `myapp-pod`。
+  * `myapp-container`
+  * `init-mydb`
+* 创建两个服务：
+  * `myservice`
+  * `mydb`
 
-Demo: 
+演示预期结论：
 
-Create Pod `myapp-pod` with below yaml file.
+* `myapp-container`等待服务`myservice`启动，以解析名称`myservice.dev.svc.cluster.local`
+* `init-mydb`等待服务`mydb`启动，以解析名称`mydb.dev.svc.cluster.local`。
 
-Create yaml file `myapp-pod.yaml` and add below content. 
-Note: Due to the command `$(cat /var/.....` will be treated as host variable, we can not use echo to generate the file. It's the variabel in container itself.
+演示：
 
-```console
+创建名为`myapp-pod.yaml`的yaml文件，并添加以下内容。
+注意：由于命令`$(cat /var/.....`将被视为主机变量，因此我们不能使用echo生成该文件。它是容器本身的变量。
+
+```bash
 vi myapp-pod.yaml
 ```
 
-Content
+文件内容
 
-```console
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -514,40 +528,40 @@ spec:
     command: ['sh', '-c', "until nslookup mydb.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for mydb; sleep 2; done"]
 ```
 
-Apply the yaml file to create the Pod.
+用上面创建的yaml文件创建Pod `myapp-pod`。
 
-```console
+```bash
 kubectl apply -f myapp-pod.yaml
 ```
 
-Check Pod status.
+检查pod的状态。
 
-```console
+```bash
 kubectl get pod myapp-pod
 ```
 
-Result
+运行结果：
 
-```
+```console
 NAME        READY   STATUS     RESTARTS   AGE
 myapp-pod   0/1     Init:0/2   0          12m
 ```
 
-Inspect Pods. Get two errors:
+检查Pod，可以看到两个错误：
 
-* nslookup: can't resolve 'myservice.dev.svc.cluster.local'
-* container "init-mydb" in pod "myapp-pod" is waiting to start: PodInitializing
+* nslookup: 无法解析'myservice.dev.svc.cluster.local'
+* Pod "myapp-pod"中的容器“init-mydb”正在等待启动：PodInitializing
 
-```console
+```bash
 kubectl logs myapp-pod -c init-myservice # Inspect the first init container
 kubectl logs myapp-pod -c init-mydb      # Inspect the second init container
 ```
 
-At this point, those init containers will be waiting to discover Services named mydb and myservice.
+在这个时候，这些 init 容器将等待发现名为 `mydb` 和 `myservice` 的服务。
 
-Create the `mydb` and `myservice` services:
+创建 `mydb` 和 `myservice` 服务：
 
-```console
+```bash
 kubectl apply -f - << EOF
 apiVersion: v1
 kind: Service
@@ -571,43 +585,44 @@ spec:
 EOF
 ```
 
-Get current status of Services.
+查看创建的服务的状态。
 
-```console
+```bash
 kubectl get service
 ```
 
-Both of Services are up.
+创建的2个服务都是运行状态。
 
-```
+```console
 NAME        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
 mydb        ClusterIP   11.244.239.149   <none>        80/TCP    6s
 myservice   ClusterIP   11.244.116.126   <none>        80/TCP    6s
 ```
 
-Get current Pod status.
+再次查看pod的状态。
 
-```console
+```bash
 kubectl get pod myapp-pod -o wide
 ```
 
-The Pod is up.
+pod已经正常运行了。
 
-```
+```console
 NAME        READY   STATUS     RESTARTS   AGE     IP             NODE     NOMINATED NODE   READINESS GATES
 myapp-pod   0/1     Init:0/2   0          2m40s   10.244.112.2   cka002   <none>           <none>
 ```
 
-We now see that those init containers complete, and that the myapp-pod Pod moves into the Running state.
+现在我们可以看到那些初始化容器都已经完成，`myapp-pod` Pod 进入了 Running 状态。
 
-Clean up.
+删除上面练习中创建的pod。
 
-```console
+```bash
 kubectl delete service mydb myservice 
 kubectl delete pod myapp-pod 
 ```
 
-!!! References
-    * [Pod basics](https://kubernetes.io/docs/concepts/workloads/pods/pod/)
-    * [Lifecycle & phases](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
-    * [Kubernetes pod design pattern](https://www.cnblogs.com/zhenyuyaodidiao/p/6514907.html)
+参考：
+
+* [Pod basics](https://kubernetes.io/docs/concepts/workloads/pods/pod/)
+* [Lifecycle & phases](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
+* [Kubernetes pod design pattern](https://www.cnblogs.com/zhenyuyaodidiao/p/6514907.html)

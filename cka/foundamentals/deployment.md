@@ -1,32 +1,39 @@
-# Deployment
+# CKA自学笔记9:Deployment
 
-!!! Scenario
-    * Modify Existing Deployment, e.g., add port number in below demo.
+## 摘要
 
-Demo:
+修改已有的Deployment，比如，增加端口号等。
 
-Create Deployment `nginx`.
-```
+## 演示
+
+创建Deployment `nginx`。
+
+```bash
 kubectl create deployment nginx --image=nginx
 ```
 
-Execute command below to get yaml template with port number.
-The option `--port=8080` specified the port that this container exposes.
-```
+执行以下命令以获取带有端口号的yaml模板。
+选项 `--port=8080` 指定了该容器暴露的端口号。
+
+```bash
 kubectl create deployment nginx --image=nginx --port=8080 --dry-run=client -o yaml
 ```
 
-Then we get to know the path to add port number, like below.
-```
+这样我们就知道了添加端口号的路径，就像下面这样：
+
+```bash
 kubectl explain deployment.spec.template.spec.containers.ports.containerPort
 ```
 
-Execute command below to edit the Deployemnt.
-```
+执行下面的命令来修改当前正在运行的Deployment。
+
+```bash
 kubectl edit deployment nginx
 ```
-Add below two lines to specify port number with `8080` and protocol is `TCP`.
-```
+
+添加下面2行来制定`8080`端口和`TCP`协议。
+
+```yaml
 spec:
   template:
     spec:
@@ -38,9 +45,9 @@ spec:
           protocol: TCP
 ```
 
+通过命令 `kubectl describe deployment <deployment_name>`我们可以看到在Deployment中端口号和协议已经被正确添加了。
 
-Use command `kubectl describe deployment <deployment_name>`, we can see the port number was added.
-```
+```yaml
 Pod Template:
   Labels:  app=nginx
   Containers:
@@ -53,8 +60,9 @@ Pod Template:
   Volumes:        <none>
 ```
 
-With command `kubectl describe pod <pod_name>`, we can see the port number was added.
-```
+通过命令 `kubectl describe pod <pod_name>` 我们可以看到在pod中端口号和协议已经被正确添加了。
+
+```yaml
 Containers:
   nginx:
     Container ID:   containerd://af4a1243f981497074b5c006ac55fcf795688399871d1dfe91a095321f5c91aa
@@ -71,12 +79,10 @@ Containers:
       /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-hftdt (ro)
 ```
 
+以下是Deployment的一些关键字段（使用 `kubectl explain` ）：
 
-!!! Info
-    Some key fields of deployment (use `kubectl explain`):
-    
-    * `deployment.spec.revisionHistoryLimit`: The number of old ReplicaSets to retain to allow rollback. Defaults to `10`.
-    * `deployment.spec.strategy.type`: Type of deployment. Can be `Recreate` or `RollingUpdate`. Default is `RollingUpdate`.
-    * `deployment.spec.strategy.rollingUpdate.maxUnavailable`: The maximum number of pods that can be unavailable during the update. Defaults to 25%.
-    * `deployment.spec.strategy.rollingUpdate.maxSurge`: The maximum number of pods that can be scheduled above the desired number of pods. Defaults to 25%. This can not be 0 if MaxUnavailable is 0.
-    * `deployment.spec.minReadySeconds`: Minimum number of seconds for which a newly created pod should be ready without any of its container crashing, for it to be considered available. Defaults to 0 (pod will be considered available as soon as it is ready).
+* `deployment.spec.revisionHistoryLimit`：保留旧的`ReplicaSets`的数量，以便进行回滚。默认为 `10`。
+* `deployment.spec.strategy.type`：部署的类型。可以是 `Recreate` 或 `RollingUpdate`。默认为 `RollingUpdate`。
+* `deployment.spec.strategy.rollingUpdate.maxUnavailable`：在更新期间可以不可用的Pod的最大数量。默认为`25％`。
+* `deployment.spec.strategy.rollingUpdate.maxSurge`：可以安排的Pod数量超出所需Pod数量的最大值。默认为`25％`。如果 `MaxUnavailable` 为 `0`，则此值不能为 `0`。
+* `deployment.spec.minReadySeconds`：新创建的Pod的最小准备时间（所有容器都没有崩溃），以便被视为可用。默认为`0`（一旦准备好就会被视为可用）。
