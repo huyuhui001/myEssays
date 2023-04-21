@@ -4,8 +4,8 @@
 
 包含下面内容：
 
-- [容器层](#container-layer)
-- [Kubernetes层](#kubernetes-layer)
+* 容器层
+* Kubernetes层
 
 提示：
 
@@ -17,12 +17,12 @@
 
 使用Containerd服务，通过命令`nerdctl`来管理我们的镜像和容器，这与Docker的概念相同。
 
-    * Get namespace.
-    * Get containers.
-    * Get images.
-    * Get volumes.
-    * Get overall status.
-    * Get network status.
+* Get namespace.
+* Get containers.
+* Get images.
+* Get volumes.
+* Get overall status.
+* Get network status.
 
 演示：
 
@@ -119,16 +119,17 @@ cali93613212490@if4  :
 
 `nerdctl-bridge.conflist`文件的作用是：
 
-- 定义了nerdctl使用的默认桥接CNI网络的配置，包括网络名称、子网、网关、IP分配策略等[1](https://github.com/containerd/nerdctl/blob/main/README.md) ，[2](https://github.com/containerd/nerdctl/blob/main/docs/cni.md)。
-- 使得nerdctl可以使用docker run -it --rm alpine这样的命令来运行一个容器，并自动分配一个10.4.0.0/24网段的IP地址[1](https://github.com/containerd/nerdctl/blob/main/README.md)，[3](https://github.com/containerd/nerdctl)。
-- 使得nerdctl可以支持一些基本的CNI插件，如bridge, portmap, firewall, tuning[1](https://github.com/containerd/nerdctl/blob/main/README.md)，[2](https://github.com/containerd/nerdctl/blob/main/docs/cni.md)。
+* 定义了nerdctl使用的默认桥接CNI网络的配置，包括网络名称、子网、网关、IP分配策略等[1](https://github.com/containerd/nerdctl/blob/main/README.md) ，[2](https://github.com/containerd/nerdctl/blob/main/docs/cni.md)。
+* 使得nerdctl可以使用docker run -it --rm alpine这样的命令来运行一个容器，并自动分配一个10.4.0.0/24网段的IP地址[1](https://github.com/containerd/nerdctl/blob/main/README.md)，[3](https://github.com/containerd/nerdctl)。
+* 使得nerdctl可以支持一些基本的CNI插件，如bridge, portmap, firewall, tuning[1](https://github.com/containerd/nerdctl/blob/main/README.md)，[2](https://github.com/containerd/nerdctl/blob/main/docs/cni.md)。
 
 ## Kubernetes层
 
 场景：
-    * 节点Nodes
-    * 命名空间Namespaces
-    * 系统Pods
+
+* 节点Nodes
+* 命名空间Namespaces
+* 系统Pods
 
 演示：
 
@@ -179,22 +180,22 @@ kube-system   kube-proxy-qs6rf                           1/1     Running   0    
 kube-system   kube-scheduler-cka001                      1/1     Running   0          15h   cka001   <none>           <none>
 ```
 
-总结： 
-下面列出了初始集群中主节点和所有节点中所包含的容器和Pod的关系。 
+总结：
+下面列出了初始集群中主节点和所有节点中所包含的容器和Pod的关系。
 
-    * Master node:
-        * CoreDNS: 2 Pod
-        * etcd: 1 Pod
-        * apiserver: 1 Pod
-        * controller-manager: 1 Pod
-        * scheduler: 1 Pod
-        * Calico Controller: 1 Pod
-    * All nodes:
-        * Calico Node: 1 Pod each
-        * Proxy: 1 Pod each
+* Master node:
+  * CoreDNS: 2 Pod
+  * etcd: 1 Pod
+  * apiserver: 1 Pod
+  * controller-manager: 1 Pod
+  * scheduler: 1 Pod
+  * Calico Controller: 1 Pod
+* All nodes:
+  * Calico Node: 1 Pod each
+  * Proxy: 1 Pod each
 
 参考：
 
-- pause容器：[文章1](https://zhuanlan.zhihu.com/p/464712164) and [文章2](https://cloud.tencent.com/developer/article/1583919).
+* pause容器：[文章1](https://zhuanlan.zhihu.com/p/464712164) and [文章2](https://cloud.tencent.com/developer/article/1583919).
 
-- [nerdctl](https://github.com/containerd/nerdctl)
+* [nerdctl](https://github.com/containerd/nerdctl)

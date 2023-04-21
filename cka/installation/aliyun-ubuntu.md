@@ -1,4 +1,4 @@
-# # CKA自学笔记3:阿里云ECS安装Kubernetes
+# CKA自学笔记3:阿里云ECS安装Kubernetes
 
 ## 摘要
 
@@ -12,7 +12,7 @@
 
 * 主机：2vCPU+4GiB
 * 操作系统：Ubuntu  20.04 x86_64
-* 实例类型：ecs.sn1.medium 
+* 实例类型：ecs.sn1.medium
 * 实例名称：cka001, cka002, cka003
 * 网络配置：both public IPs and private IPs
 * 最大网络带宽：100Mbps (Peak Value)
@@ -52,7 +52,7 @@ sftp -i aliyun-root root@cka001
 put aliyun-vagrant.pub
 ```
 
-新开一个终端窗口，用`root`的密钥登录`cka001`节点。 
+新开一个终端窗口，用`root`的密钥登录`cka001`节点。
 将上一步上传的密钥文件`aliyun-vagrant.pub` 从`/root`目录拷贝到 `/home/vagrant/.ssh/`。
 将公钥文件 `aliyun-vagrant.pub` 重命名为 `authorized_keys`。
 更改文件`authorized_keys` 的所有者owner为 `vagrant`.
@@ -65,7 +65,7 @@ chown vagrant.sudo /home/vagrant/.ssh/authorized_keys
 chmod 600 /home/vagrant/.ssh/authorized_keys
 ```
 
-检查文件 `/etc/ssh/sshd_config`，确定密码登录验证参数`asswordAuthentication`设定为`no`，即只能通过证书远程登录。 
+检查文件 `/etc/ssh/sshd_config`，确定密码登录验证参数`asswordAuthentication`设定为`no`，即只能通过证书远程登录。
 
 ```bash
 cat /etc/ssh/sshd_config
@@ -291,9 +291,9 @@ sudo vi /etc/containerd/config.toml
 ```
 
 修改参数`sandbox_image` 的值为`"registry.aliyuncs.com/google_containers/pause:3.6"`。
-修改参数`SystemdCgroup `的值为`true`。
+修改参数`SystemdCgroup`的值为`true`。
 
-```
+```console
 [plugins]
   [plugins."io.containerd.gc.v1.scheduler"]
 
@@ -402,7 +402,7 @@ kubeadm config print init-defaults
 
 类似结果如下。保存默认配置的结果，后续会作为参考。
 
-```
+```yaml
 apiVersion: kubeadm.k8s.io/v1beta3
 bootstrapTokens:
 - groups:
@@ -445,37 +445,37 @@ scheduler: {}
 
 通过命令 `kubeadm init` 进行主节点的初始化，下面是这个命令主要参数的说明，特别是网络参数的三个选择。
 
-- `--pod-network-cidr`:
-  - 指定pod使用的IP地址范围。如果指定了该参数，则Control Plane会自动讲指定的CIDR分配给每个节点。
-  - IP地址段 `10.244.0.0/16` 是Flannel网络组件默认的地址范围。如果需要修改Flannel的IP地址段，需要在这里指定，且在部署Flannel时也要保持一致的IP段。
-- `--apiserver-bind-port`:
-  - API服务（API Server）的端口，默认时6443。
-- `--service-cidr`:
-  - 指定服务（service）的IP地址段，默认是`10.96.0.0/12`。
+* `--pod-network-cidr`:
+  * 指定pod使用的IP地址范围。如果指定了该参数，则Control Plane会自动讲指定的CIDR分配给每个节点。
+  * IP地址段 `10.244.0.0/16` 是Flannel网络组件默认的地址范围。如果需要修改Flannel的IP地址段，需要在这里指定，且在部署Flannel时也要保持一致的IP段。
+* `--apiserver-bind-port`:
+  * API服务（API Server）的端口，默认时6443。
+* `--service-cidr`:
+  * 指定服务（service）的IP地址段，默认是`10.96.0.0/12`。
 
 提示：
 
-- 服务VIPs（service VIPs），也称作集群IP（Cluster IP），通过参数 `--service-cidr`指定。
-- podCIDR，也称为endpoint IP，通过参数 `--pod-network-cidr`指定。
+* 服务VIPs（service VIPs），也称作集群IP（Cluster IP），通过参数 `--service-cidr`指定。
+* podCIDR，也称为endpoint IP，通过参数 `--pod-network-cidr`指定。
 
 有4种典型的网络问题：
 
-- 高度耦合的容器与容器之间的通信：这可以通过Pod（podCIDR）和本地主机通信来解决。
-- Pod对Pod通信（Pod-to-Pod）：
-  - 也被称为容器对容器通信（container-to-container）。
-  - 在Flannel网络插件中的示例流程是：Pod --> veth对 --> cni0 --> flannel.1 --> 宿主机eth0 --> 宿主机eth0 --> flannel.1 --> cni0 --> veth对 --> Pod。
-- Pod对Service通信（Pod-to-Service）：
-  - 流程: Pod --> 内核 --> Service iptables --> Service --> Pod iptables --> Pod。
-- 外部对Service通信（External-to-Service）：
-  - 负载均衡器: SLB --> NodePort --> Service --> Pod。
+* 高度耦合的容器与容器之间的通信：这可以通过Pod（podCIDR）和本地主机通信来解决。
+* Pod对Pod通信（Pod-to-Pod）：
+  * 也被称为容器对容器通信（container-to-container）。
+  * 在Flannel网络插件中的示例流程是：Pod --> veth对 --> cni0 --> flannel.1 --> 宿主机eth0 --> 宿主机eth0 --> flannel.1 --> cni0 --> veth对 --> Pod。
+* Pod对Service通信（Pod-to-Service）：
+  * 流程: Pod --> 内核 --> Service iptables --> Service --> Pod iptables --> Pod。
+* 外部对Service通信（External-to-Service）：
+  * 负载均衡器: SLB --> NodePort --> Service --> Pod。
 
 `kube-proxy` 是对iptables负责，不是网络流量（traffic）。
 
-- `kube-proxy`是Kubernetes集群中的一个组件，负责为Service提供代理服务，同时也是Kubernetes网络模型中的重要组成部分之一。`kube-proxy`会在每个节点上启动一个代理进程，通过监听Kubernetes API Server的Service和Endpoint的变化来维护一个本地的Service和Endpoint的缓存。当有请求到达某个Service时，`kube-proxy`会根据该Service的类型（ClusterIP、NodePort、LoadBalancer、ExternalName）和端口号，生成相应的iptables规则，将请求转发给Service所代理的后端Pod。
+* `kube-proxy`是Kubernetes集群中的一个组件，负责为Service提供代理服务，同时也是Kubernetes网络模型中的重要组成部分之一。`kube-proxy`会在每个节点上启动一个代理进程，通过监听Kubernetes API Server的Service和Endpoint的变化来维护一个本地的Service和Endpoint的缓存。当有请求到达某个Service时，`kube-proxy`会根据该Service的类型（ClusterIP、NodePort、LoadBalancer、ExternalName）和端口号，生成相应的iptables规则，将请求转发给Service所代理的后端Pod。
 
-- iptables是Linux系统中的一个重要网络工具，可以设置IP包的过滤、转发和修改规则，可以实现网络层的防火墙、NAT等功能。在Kubernetes集群中，`kube-proxy`通过生成和更新iptables规则，来实现Service和Endpoint之间的转发和代理。具体来说，kube-proxy会为每个Service创建三条iptables规则链（nat表中的KUBE-SERVICES和KUBE-NODEPORTS链，以及filter表中的KUBE-SVC-XXXXX链），通过这些规则链，将请求转发到相应的Pod或者Service上。
+* iptables是Linux系统中的一个重要网络工具，可以设置IP包的过滤、转发和修改规则，可以实现网络层的防火墙、NAT等功能。在Kubernetes集群中，`kube-proxy`通过生成和更新iptables规则，来实现Service和Endpoint之间的转发和代理。具体来说，kube-proxy会为每个Service创建三条iptables规则链（nat表中的KUBE-SERVICES和KUBE-NODEPORTS链，以及filter表中的KUBE-SVC-XXXXX链），通过这些规则链，将请求转发到相应的Pod或者Service上。
 
-- 因此，`kube-proxy`和iptables是紧密相关的两个组件，通过iptables规则来实现Service和Pod之间的转发和代理。这种实现方式具有可扩展性和高可用性，同时也提供了一种灵活的网络模型，可以方便地实现服务发现、负载均衡等功能。
+* 因此，`kube-proxy`和iptables是紧密相关的两个组件，通过iptables规则来实现Service和Pod之间的转发和代理。这种实现方式具有可扩展性和高可用性，同时也提供了一种灵活的网络模型，可以方便地实现服务发现、负载均衡等功能。
 
 ```bash
 sudo kubeadm init \
@@ -544,13 +544,13 @@ users:
 
 读取当前上下文：
 
-```
+```bash
 kubectl config get-contexts
 ```
 
 运行结果：
 
-```
+```console
 CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPACE
 *         kubernetes-admin@kubernetes   kubernetes   kubernetes-admin   
 ```
@@ -573,7 +573,7 @@ kubeadm token create --print-join-command
 
 ## 安装Calico或Flannel
 
-在控制平面Control Plane上安装Calico或者Flannel。如果需要配置网络策略，则选择Calico。 
+在控制平面Control Plane上安装Calico或者Flannel。如果需要配置网络策略，则选择Calico。
 
 ### 安装Flannel
 
@@ -698,9 +698,9 @@ kubectl cluster-info
 
 查看节点运行状态。此时，所有节点都是`Ready`的正常状态了。
 
-- OS Image: Ubuntu 20.04.4 LTS
-- Kernel Version: 5.4.0-122-generic
-- Container Runtime: containerd://1.5.9
+* OS Image: Ubuntu 20.04.4 LTS
+* Kernel Version: 5.4.0-122-generic
+* Container Runtime: containerd://1.5.9
 
 ```bash
 kubectl get nodes -owide
@@ -797,10 +797,10 @@ kubectl config get-contexts
 
 类似下面结果：
 
-- `kubernetes-admin@kubernetes`是Context名。
-- `kubernetes`是集群名。
-- `kubernetes-admin`是用户名。
-- 当前例子中没有指定名称空间。
+* `kubernetes-admin@kubernetes`是Context名。
+* `kubernetes`是集群名。
+* `kubernetes-admin`是用户名。
+* 当前例子中没有指定名称空间。
 
 ```console
 CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPACE
@@ -829,8 +829,8 @@ kubectl config use-context kubernetes-admin@kubernetes
 
 参考资料：
 
-- [kubectl](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
-- [commandline
+* [kubectl](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
+* [commandline
 
 ## 重置集群
 
@@ -856,17 +856,17 @@ ipvsadm --clear
 
 ## 排错
 
-### 错误1：
+### 错误1
 
 报错信息：
 
-The connection to the server <master>:6443 was refused - did you specify the right host or port?
+The connection to the server `<master>:6443` was refused - did you specify the right host or port?
 
 解决尝试：
 
 [Reference](https://discuss.kubernetes.io/t/the-connection-to-the-server-host-6443-was-refused-did-you-specify-the-right-host-or-port/552/15)
 
-检查文件kubeconfig的内容和文件路径是否正确。 
+检查文件kubeconfig的内容和文件路径是否正确。
 
 检查环境变量设置。
 
@@ -900,11 +900,11 @@ sudo systemctl status firewalld.service
 
 检查kubelet日志。
 
-```
+```bash
 journalctl -xeu kubelet
 ```
 
-### 错误2：
+### 错误2
 
 报错信息：
 
@@ -914,9 +914,7 @@ journalctl -xeu kubelet
 
 重启Containerd服务。
 
-```
+```bash
 sudo systemctl restart containerd
 sudo systemctl status containerd
 ```
-
-

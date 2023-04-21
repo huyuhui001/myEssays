@@ -187,7 +187,7 @@ sudo cgcreate -g cpu:mygroup
 sudo cgexec -g cpu:mygroup /bin/bash
 ```
 
-在上面的例子中，`cpu.cfs_quota_us` 文件设置了 cgroup 中的进程可以使用的最大 CPU 时间。该值以微秒为单位，因此将其设置为 50000 表示进程最多可以使用单个 CPU 核心的 50%。`cgcreate `和 `cgexec `命令创建并将进程`/bin/bash`移动到 `mygroup `cgroup 中。
+在上面的例子中，`cpu.cfs_quota_us` 文件设置了 cgroup 中的进程可以使用的最大 CPU 时间。该值以微秒为单位，因此将其设置为 50000 表示进程最多可以使用单个 CPU 核心的 50%。`cgcreate`和 `cgexec`命令创建并将进程`/bin/bash`移动到 `mygroup`cgroup 中。
 
 限制内存使用上限：
 
@@ -259,7 +259,7 @@ mount | grep cgroup
 
 如果 cgroups 文件系统已经挂载，应该会看到输出类似于以下内容（）以memory为例）：
 
-```
+```console
 cgroup on /sys/fs/cgroup/memory type cgroup (rw,nosuid,nodev,noexec,relatime,memory)
 ```
 
@@ -346,7 +346,7 @@ AppArmor 的主配置文件是 `/etc/apparmor/profiles.d/` 目录下的各个文
 
 该配置文件定义了 `/usr/sbin/sshd` 进程的权限限制规则，包括允许访问的文件、禁止访问的文件等。其中 `#include <abstractions/base>` 表示包含了一组通用的权限规则，可以在不同的应用程序配置中重复使用。
 
-2. SELinux
+2.SELinux
 
 SELinux 的主配置文件是 `/etc/selinux/config`，该文件定义了系统的 SELinux 策略和模式。默认情况下，openSUSE 使用的是 `targeted` 模式。
 
@@ -380,25 +380,25 @@ Kernel capabilities 是 Linux 内核提供的一种机制，用于控制进程�
 
 Kernel capabilities 提供了一种更细粒度的权限控制方式。每个进程都有一组 capabilities，每个 capability 表示一种特定的权限。进程可以请求和释放某些 capability，这样就可以将权限授予进程，而不必授予所有权限。
 
-例如，可以将 `CAP_NET_BIND_SERVICE `capability 授予某个进程，这样该进程就可以绑定 1-1023 的端口，而不必具有 root 权限。类似地，可以将 `CAP_SYS_ADMIN `capability 授予某个进程，这样该进程就可以执行系统管理任务，如挂载文件系统和创建设备节点等。
+例如，可以将 `CAP_NET_BIND_SERVICE`capability 授予某个进程，这样该进程就可以绑定 1-1023 的端口，而不必具有 root 权限。类似地，可以将 `CAP_SYS_ADMIN`capability 授予某个进程，这样该进程就可以执行系统管理任务，如挂载文件系统和创建设备节点等。
 
-Linux 内核提供了一组默认的 capabilities，也可以通过自定义的方式创建新的 capabilities，以便更好地控制系统资源的访问权限。可以使用 `setcap `命令为二进制文件设置 capabilities。例如，下面的命令将 `CAP_NET_RAW `capability 授予 `/usr/bin/ping` 命令：
+Linux 内核提供了一组默认的 capabilities，也可以通过自定义的方式创建新的 capabilities，以便更好地控制系统资源的访问权限。可以使用 `setcap`命令为二进制文件设置 capabilities。例如，下面的命令将 `CAP_NET_RAW`capability 授予 `/usr/bin/ping` 命令：
 
 ```bash
 sudo setcap cap_net_raw+ep /usr/bin/ping
 ```
 
-这样，用户就可以使用 `ping `命令而不必以 root 用户的身份登录。
+这样，用户就可以使用 `ping`命令而不必以 root 用户的身份登录。
 
-除了 `CAP_NET_BIND_SERVICE `和 `CAP_SYS_ADMIN`，还有一些其他的 capabilities，以下是一些例子：
+除了 `CAP_NET_BIND_SERVICE`和 `CAP_SYS_ADMIN`，还有一些其他的 capabilities，以下是一些例子：
 
 - `CAP_DAC_OVERRIDE`：允许进程忽略文件权限，可以访问任何文件。
 - `CAP_CHOWN`：允许进程修改文件的所有者。
-- `CAP_SETUID `和 `CAP_SETGID`：允许进程修改自己的用户 ID 和组 ID。
+- `CAP_SETUID`和 `CAP_SETGID`：允许进程修改自己的用户 ID 和组 ID。
 - `CAP_NET_ADMIN`：允许进程执行网络管理任务，如配置网络接口和路由表等。
 - `CAP_SYS_RESOURCE`：允许进程修改系统资源限制，如 CPU 时间和内存限制等。
 
-可以通过命令 `man 7 capabilities` 来查看系统提供的 capabilities 列表和详细说明。在使用 Kernel capabilities 时，需要注意，只有拥有 `CAP_SETFCAP `或 `CAP_SYS_ADMIN `capability 的进程才能够修改自己或其他进程的 capabilities，这也是为了保护系统的安全性。
+可以通过命令 `man 7 capabilities` 来查看系统提供的 capabilities 列表和详细说明。在使用 Kernel capabilities 时，需要注意，只有拥有 `CAP_SETFCAP`或 `CAP_SYS_ADMIN`capability 的进程才能够修改自己或其他进程的 capabilities，这也是为了保护系统的安全性。
 
 如果执行 setcap 命令时出现 "command not found" 的错误，这通常意味着 setcap 命令所在的包尚未安装。在 openSUSE 中，setcap 命令包含在 libcap-progs 软件包中。
 
@@ -949,8 +949,8 @@ docker container ps -a
 
 通过下面两个链接来验证上面的变化是否生效。
 
-- http://localhost:1086/
-- https://localhost:1088/
+- <http://localhost:1086/>
+- <https://localhost:1088/>
 
 在[DockerHub](https://hub.docker.com/) 注册一个个人账号，启用 Docker Hub 中的访问令牌以进行 CLI 客户端身份验证。
 
@@ -995,7 +995,7 @@ tree -l /opt/tmp-2
 └── wiki.go
 ```
 
-创建一个新的Dockerfile。 
+创建一个新的Dockerfile。
 
 ```bash
 cat Dockerfile
@@ -1045,7 +1045,7 @@ docker build -t lizard/golang:my1 /opt/tmp-2/
 docker run -d -p 1090:8080 --name golan_v1 lizard/golang:my1
 ```
 
-通过链接 http://localhost:1090 访问这个运行的容器。
+通过链接 <http://localhost:1090> 访问这个运行的容器。
 
 对我们刚刚创建的新的golang镜像进行标签，并且上传到Dockerhub。
 

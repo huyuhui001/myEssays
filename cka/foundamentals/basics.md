@@ -222,4 +222,4 @@ curl -v -XGET  \
 
 - [jsonpath in kubectl](https://kubernetes.io/docs/reference/kubectl/jsonpath/)
 
-- [kubectl](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands) 
+- [kubectl](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands)

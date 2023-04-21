@@ -1,4 +1,4 @@
-# # CKA自学笔记2:多节点虚拟机安装Kubernetes
+# CKA自学笔记2:多节点虚拟机安装Kubernetes
 
 ## 摘要
 
@@ -49,7 +49,7 @@ sudo vi /etc/ssh/sshd_config
 
 把参数 `PermitRootLogin`的值从`prohibit-password` 改为`yes`。
 
-```
+```console
 PermitRootLogin yes
 #PermitRootLogin prohibit-password
 ```
@@ -87,7 +87,7 @@ sudo vi /etc/hosts
 
 以当前练习为例，修改后的`/etc/hosts`文件类似如下内容。
 
-```
+```console
 127.0.1.1 ubu1
 11.0.1.129 ubu1
 11.0.1.130 ubu2
@@ -141,7 +141,7 @@ sudo vi /etc/fstab
 
 修改后的结果类似如下。
 
-```
+```console
 /dev/disk/by-uuid/df370d2a-83e5-4895-8c7f-633f2545e3fe / ext4 defaults 0 1
 # /swap.img     none    swap    sw      0       0
 ```
@@ -159,7 +159,7 @@ source /etc/profile
 
 执行命令 `ll /etc/localtime`来验证时区是否修改正确。
 
-```
+```console
 lrwxrwxrwx 1 root root 33 Jul 15 22:00 /etc/localtime -> /usr/share/zoneinfo/Asia/Shanghai
 ```
 
@@ -258,9 +258,9 @@ sudo vi /etc/containerd/config.toml
 ```
 
 更新`sandbox_image`的值为`"registry.aliyuncs.com/google_containers/pause:3.6"`，以使用国内阿里云的源。
-更新`SystemdCgroup ` 的值为 `true`，以使用Cgroup。
+更新`SystemdCgroup` 的值为 `true`，以使用Cgroup。
 
-```
+```console
 [plugins]
   [plugins."io.containerd.gc.v1.scheduler"]
 
@@ -291,7 +291,7 @@ sudo systemctl status containerd
 
 [`nerdctl`](https://github.com/containerd/nerdctl) 服务支持Contanerd所提供的容器化特性，特别是一些Docker不具备的新特性。
 
-二进制安装包可以通过这个链接取得: https://github.com/containerd/nerdctl/releases 。
+二进制安装包可以通过这个链接取得: <https://github.com/containerd/nerdctl/releases> 。
 
 ```bash
 wget https://github.com/containerd/nerdctl/releases/download/v0.22.2/nerdctl-0.22.2-linux-amd64.tar.gz
@@ -331,7 +331,7 @@ sudo apt-get upgrade iptables
 sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg
 ```
 
-添加Kubernetes安装源。 
+添加Kubernetes安装源。
 
 ```bash
 echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
@@ -355,7 +355,7 @@ sudo apt-get -y install kubelet=1.24.1-00 kubeadm=1.24.1-00 kubectl=1.24.1-00 --
 
 在承担主节点的虚拟机里配置控制平面（Control Plane）。
 
-检查`kubeadm `当前默认配置参数。
+检查`kubeadm`当前默认配置参数。
 
 ```bash
 kubeadm config print init-defaults
@@ -402,19 +402,19 @@ networking:
 scheduler: {}
 ```
 
-模拟安装和正式安装。 
+模拟安装和正式安装。
 
 通过命令 `kubeadm init` 进行主节点的初始化，下面是这个命令主要参数的说明，特别是网络参数的三个选择。
 
-* `--pod-network-cidr`: 
+* `--pod-network-cidr`:
   * 指定pod使用的IP地址范围。如果指定了该参数，则Control Plane会自动讲指定的CIDR分配给每个节点。
   * IP地址段 `10.244.0.0/16` 是Flannel网络组件默认的地址范围。如果需要修改Flannel的IP地址段，需要在这里指定，且在部署Flannel时也要保持一致的IP段。
-* `--apiserver-bind-port`: 
+* `--apiserver-bind-port`:
   * API服务（API Server）的端口，默认时6443。
-* `--service-cidr`: 
+* `--service-cidr`:
   * 指定服务（service）的IP地址段，默认是`10.96.0.0/12`。
 
-提示： 
+提示：
 
 * 服务VIPs（service VIPs），也称作集群IP（Cluster IP），通过参数 `--service-cidr`指定。
 * podCIDR，也称为endpoint IP，通过参数 `--pod-network-cidr`指定。
@@ -422,21 +422,21 @@ scheduler: {}
 有4种典型的网络问题：
 
 * 高度耦合的容器与容器之间的通信：这可以通过Pod（podCIDR）和本地主机通信来解决。
-* Pod对Pod通信（Pod-to-Pod）： 
+* Pod对Pod通信（Pod-to-Pod）：
   * 也被称为容器对容器通信（container-to-container）。
   * 在Flannel网络插件中的示例流程是：Pod --> veth对 --> cni0 --> flannel.1 --> 宿主机eth0 --> 宿主机eth0 --> flannel.1 --> cni0 --> veth对 --> Pod。
 * Pod对Service通信（Pod-to-Service）：
   * 流程: Pod --> 内核 --> Service iptables --> Service --> Pod iptables --> Pod。
-* 外部对Service通信（External-to-Service）： 
+* 外部对Service通信（External-to-Service）：
   * 负载均衡器: SLB --> NodePort --> Service --> Pod。
 
-`kube-proxy` 是对iptables负责，不是网络流量（traffic）。 
+`kube-proxy` 是对iptables负责，不是网络流量（traffic）。
 
-- `kube-proxy`是Kubernetes集群中的一个组件，负责为Service提供代理服务，同时也是Kubernetes网络模型中的重要组成部分之一。`kube-proxy`会在每个节点上启动一个代理进程，通过监听Kubernetes API Server的Service和Endpoint的变化来维护一个本地的Service和Endpoint的缓存。当有请求到达某个Service时，`kube-proxy`会根据该Service的类型（ClusterIP、NodePort、LoadBalancer、ExternalName）和端口号，生成相应的iptables规则，将请求转发给Service所代理的后端Pod。
+* `kube-proxy`是Kubernetes集群中的一个组件，负责为Service提供代理服务，同时也是Kubernetes网络模型中的重要组成部分之一。`kube-proxy`会在每个节点上启动一个代理进程，通过监听Kubernetes API Server的Service和Endpoint的变化来维护一个本地的Service和Endpoint的缓存。当有请求到达某个Service时，`kube-proxy`会根据该Service的类型（ClusterIP、NodePort、LoadBalancer、ExternalName）和端口号，生成相应的iptables规则，将请求转发给Service所代理的后端Pod。
 
-- iptables是Linux系统中的一个重要网络工具，可以设置IP包的过滤、转发和修改规则，可以实现网络层的防火墙、NAT等功能。在Kubernetes集群中，`kube-proxy`通过生成和更新iptables规则，来实现Service和Endpoint之间的转发和代理。具体来说，kube-proxy会为每个Service创建三条iptables规则链（nat表中的KUBE-SERVICES和KUBE-NODEPORTS链，以及filter表中的KUBE-SVC-XXXXX链），通过这些规则链，将请求转发到相应的Pod或者Service上。
+* iptables是Linux系统中的一个重要网络工具，可以设置IP包的过滤、转发和修改规则，可以实现网络层的防火墙、NAT等功能。在Kubernetes集群中，`kube-proxy`通过生成和更新iptables规则，来实现Service和Endpoint之间的转发和代理。具体来说，kube-proxy会为每个Service创建三条iptables规则链（nat表中的KUBE-SERVICES和KUBE-NODEPORTS链，以及filter表中的KUBE-SVC-XXXXX链），通过这些规则链，将请求转发到相应的Pod或者Service上。
 
-- 因此，`kube-proxy`和iptables是紧密相关的两个组件，通过iptables规则来实现Service和Pod之间的转发和代理。这种实现方式具有可扩展性和高可用性，同时也提供了一种灵活的网络模型，可以方便地实现服务发现、负载均衡等功能。
+* 因此，`kube-proxy`和iptables是紧密相关的两个组件，通过iptables规则来实现Service和Pod之间的转发和代理。这种实现方式具有可扩展性和高可用性，同时也提供了一种灵活的网络模型，可以方便地实现服务发现、负载均衡等功能。
 
 ```bash
 sudo kubeadm init \
@@ -655,7 +655,7 @@ kubectl get nodes -owide
 
 列出 Kubernetes 集群中所有 Namespace 下的 Pod。
 
-```
+```bash
 kubectl get pod -A
 ```
 
@@ -747,7 +747,7 @@ kubectl config use-context kubernetes-admin@kubernetes
 ```
 
 参考资料：
-    * [kubectl](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
+    *[kubectl](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
     * [commandline](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands)
 
 ## 安装Helm
@@ -756,9 +756,9 @@ Helm 是 Kubernetes 的包管理工具，它不随 Kubernetes 一起提供。
 
 Helm 有三个核心概念：
 
-- Chart（图表）是 Helm 的软件包，它包含了在 Kubernetes 集群中运行应用程序、工具或服务所需的所有资源定义。可以将其视为 Kubernetes 的 Homebrew 公式、Apt dpkg 或 Yum RPM 文件等等。
-- Repository（仓库）是图表可以被收集和共享的地方，类似于 Perl 的 CPAN 存储库或 Fedora 的软件包数据库，但用于 Kubernetes 软件包。
-- Release（发布）是在 Kubernetes 集群中运行的图表实例。一个图表通常可以在同一集群中安装多次，并且每次安装都会创建一个新的发布。以 MySQL 图表为例，如果想要在集群中运行两个数据库，则可以安装该图表两次，每次安装都会创建一个新的发布，每个发布都有自己的发布名称。
+* Chart（图表）是 Helm 的软件包，它包含了在 Kubernetes 集群中运行应用程序、工具或服务所需的所有资源定义。可以将其视为 Kubernetes 的 Homebrew 公式、Apt dpkg 或 Yum RPM 文件等等。
+* Repository（仓库）是图表可以被收集和共享的地方，类似于 Perl 的 CPAN 存储库或 Fedora 的软件包数据库，但用于 Kubernetes 软件包。
+* Release（发布）是在 Kubernetes 集群中运行的图表实例。一个图表通常可以在同一集群中安装多次，并且每次安装都会创建一个新的发布。以 MySQL 图表为例，如果想要在集群中运行两个数据库，则可以安装该图表两次，每次安装都会创建一个新的发布，每个发布都有自己的发布名称。
 
 参考文档：
 
@@ -766,7 +766,7 @@ Helm 有三个核心概念：
 * [binary release](https://github.com/helm/helm/releases)
 * [source code](https://github.com/helm/helm).
 
-Helm客户端安装： 
+Helm客户端安装：
 
 ```bash
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
@@ -784,9 +784,9 @@ helm installed into /usr/local/bin/helm
 ```
 
 提示：
-    * [`helm init`](https://helm.sh/docs/helm/helm_init/) 在Helm 3中已取消，且Tiller也一同取消。今后在集群中使用Helm时不再需要安装Tiller。
+    *[`helm init`](https://helm.sh/docs/helm/helm_init/) 在Helm 3中已取消，且Tiller也一同取消。今后在集群中使用Helm时不再需要安装Tiller。
     * `helm search`可以用来搜索两种不同类型的资源：
-        * `helm search hub`在[Artifact Hub](https://artifacthub.io/)中搜索，这个hub里列出来自数十个不同仓库的 Helm Chart。
+        *`helm search hub`在[Artifact Hub](https://artifacthub.io/)中搜索，这个hub里列出来自数十个不同仓库的 Helm Chart。
         * `helm search repo` 命令用于搜索已添加到本地 Helm 客户端的仓库（使用 `helm repo add` 命令）。此搜索是在本地数据上进行的，不需要公共网络连接。
 
 参考资料：[Helming development](../foundamentals/helming.md)

@@ -1,4 +1,4 @@
-# # CKA自学笔记1:单节点虚拟机安装Kubernetes
+# CKA自学笔记1:单节点虚拟机安装Kubernetes
 
 ## 摘要
 
@@ -56,7 +56,7 @@ cat /etc/hostname
 cat /etc/hosts
 ```
 
-```
+```console
 127.0.0.1 localhost
 127.0.1.1 ubusrv
 
@@ -104,7 +104,7 @@ sudo ufw status verbose
 
 注释掉文件`/etc/fstab`的最后一行，即禁用交换分区。需要重启客户机使之生效。
 
-```
+```console
 /dev/disk/by-uuid/df370d2a-83e5-4895-8c7f-633f2545e3fe / ext4 defaults 0 1
 # /swap.img     none    swap    sw      0       0
 ```
@@ -119,20 +119,20 @@ source /etc/profile
 
 执行命令 `ll /etc/localtime`验证时区是否已正确设置并生效。
 
-```
+```console
 lrwxrwxrwx 1 root root 33 Jul 15 22:00 /etc/localtime -> /usr/share/zoneinfo/Asia/Shanghai
 ```
 
 客户机内核设置。
 
-```
+```bash
 cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
 overlay
 br_netfilter
 EOF
 ```
 
-```
+```bash
 sudo modprobe overlay
 sudo modprobe br_netfilter
 ```
@@ -151,7 +151,7 @@ sudo sysctl --system
 
 ## 安装Docker
 
-[参考帮助](https://docs.docker.com/engine/install/ubuntu/) 
+[参考帮助](https://docs.docker.com/engine/install/ubuntu/)
 
 ```bash
 sudo apt-get install \
@@ -312,7 +312,7 @@ chmod 700 get_helm.sh
 
 输出结果：
 
-```
+```console
 Downloading https://get.helm.sh/helm-v3.9.0-linux-amd64.tar.gz
 Verifying checksum... Done.
 Preparing to install helm into /usr/local/bin

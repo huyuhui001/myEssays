@@ -34,48 +34,48 @@
 
 ![The components of a Kubernetes cluster](https://d33wubrfki0l68.cloudfront.net/2475489eaf20163ec0f54ddc1d92aa8d4c87c96b/e7c81/images/docs/components-of-kubernetes.svg)
 
-Kubernetes组件: 
+Kubernetes组件:
 
-* 控制平面组件 Control Plane Components
-  * kube-apiserver: 
-    * 查询和操作 Kubernetes 中对象的状态。
-    * 充当所有资源之间的通信中心（communication hub）。
-    * 提供集群安全身份验证、授权和角色分配。
-    * 是唯一能连接到 etcd 的组件。
-  * etcd: 
-    * 所有 Kubernetes 对象都存储在 `etcd` 中。
-    * Kubernetes 对象是 Kubernetes 系统中的持久实体(entities)，用于表示集群的状态。
-  * kube-scheduler: 
-    * 监视没有分配节点的新创建的 Pod，并为它们选择一个节点来运行。
-  * kube-controller-manager: 
-    * 运行控制器进程。
-    * *Node controller*: 负责警示和响应节点的故障。
-    * *Job controller*: 监视表示一次性任务的 Job 对象，然后创建 Pod 来完成这些任务。
-    * *Endpoints controller*: 填充 Endpoints 对象（即将 Service 和 Pod 连接起来）。
-    * *Service Account & Token controllers*: 为新命名空间创建默认帐户和 API 访问令牌。
-  * cloud-controller-manager: 
-    * 嵌入云特定的控制逻辑，仅运行特定于我们选择的云提供商的控制器，无需自己的基础设施和学习环境。
-    * *Node controller*: 用于检查云提供商，以确定节点在在它停止响应后是否已在云中被删除。
-    * *Route controller*: 用于在底层云基础架构中设置路由。
-    * *Service controller*: 用于创建、更新和删除云提供商负载均衡器。
-* 节点组件 Node Components
-  * kubelet: 
-    * 在集群中每个节点上运行的代理。 
-    * 管理节点。它确保 Pod 中运行容器。`kubelet` 向 APIServer 注册和更新节点信息，APIServer 将它们存储到 `etcd` 中。
-    * 管理 Pod。通过 APIServer 监视 Pod，并对 Pod 或 Pod 中的容器采取行动。
-    * 在容器级别进行健康检查。
-  * kube-proxy: 
-    * 是在集群中每个节点上运行的网络代理。
-      * iptables
-      * ipvs
-    * 维护节点上的网络规则。
-  * 容器运行时Container runtime：
-    * 负责运行容器的软件。
-* 插件Addons
-  * DNS: 是 DNS 服务器，是所有 Kubernetes 集群所必需的。
-  * Web UI（仪表盘）：用于 Kubernetes 集群的基于 Web 的用户界面。
-  * 容器资源监控：记录有关集中式数据库中容器的通用时间序列度量。
-  * Cluster-level Logging：负责将容器日志保存到具有搜索/浏览接口的中央日志存储中。
+- 控制平面组件 Control Plane Components
+  - kube-apiserver:
+    - 查询和操作 Kubernetes 中对象的状态。
+    - 充当所有资源之间的通信中心（communication hub）。
+    - 提供集群安全身份验证、授权和角色分配。
+    - 是唯一能连接到 etcd 的组件。
+  - etcd:
+    - 所有 Kubernetes 对象都存储在 `etcd` 中。
+    - Kubernetes 对象是 Kubernetes 系统中的持久实体(entities)，用于表示集群的状态。
+  - kube-scheduler:
+    - 监视没有分配节点的新创建的 Pod，并为它们选择一个节点来运行。
+  - kube-controller-manager:
+    - 运行控制器进程。
+    - *Node controller*: 负责警示和响应节点的故障。
+    - *Job controller*: 监视表示一次性任务的 Job 对象，然后创建 Pod 来完成这些任务。
+    - *Endpoints controller*: 填充 Endpoints 对象（即将 Service 和 Pod 连接起来）。
+    - *Service Account & Token controllers*: 为新命名空间创建默认帐户和 API 访问令牌。
+  - cloud-controller-manager:
+    - 嵌入云特定的控制逻辑，仅运行特定于我们选择的云提供商的控制器，无需自己的基础设施和学习环境。
+    - *Node controller*: 用于检查云提供商，以确定节点在在它停止响应后是否已在云中被删除。
+    - *Route controller*: 用于在底层云基础架构中设置路由。
+    - *Service controller*: 用于创建、更新和删除云提供商负载均衡器。
+- 节点组件 Node Components
+  - kubelet:
+    - 在集群中每个节点上运行的代理。
+    - 管理节点。它确保 Pod 中运行容器。`kubelet` 向 APIServer 注册和更新节点信息，APIServer 将它们存储到 `etcd` 中。
+    - 管理 Pod。通过 APIServer 监视 Pod，并对 Pod 或 Pod 中的容器采取行动。
+    - 在容器级别进行健康检查。
+  - kube-proxy:
+    - 是在集群中每个节点上运行的网络代理。
+      - iptables
+      - ipvs
+    - 维护节点上的网络规则。
+  - 容器运行时Container runtime：
+    - 负责运行容器的软件。
+- 插件Addons
+  - DNS: 是 DNS 服务器，是所有 Kubernetes 集群所必需的。
+  - Web UI（仪表盘）：用于 Kubernetes 集群的基于 Web 的用户界面。
+  - 容器资源监控：记录有关集中式数据库中容器的通用时间序列度量。
+  - Cluster-level Logging：负责将容器日志保存到具有搜索/浏览接口的中央日志存储中。
 
 可扩展性：
 
@@ -310,11 +310,11 @@ status.phase=Pending
 This kubectl command selects all Pods for which the value of the status.phase field is Running:
 `kubectl get pods --field-selector status.phase=Running`
 
-Supported field selectors vary by Kubernetes resource type. All resource types support the `metadata.name` and `metadata.namespace` fields. 
+Supported field selectors vary by Kubernetes resource type. All resource types support the `metadata.name` and `metadata.namespace` fields.
 
-Use the `=`, `==`, and `!=` operators with field selectors (`=` and `==` mean the same thing). 
+Use the `=`, `==`, and `!=` operators with field selectors (`=` and `==` mean the same thing).
 
-下面 kubectl 命令选择所有状态(phase)字段值为 Running 的 Pod： 
+下面 kubectl 命令选择所有状态(phase)字段值为 Running 的 Pod：
 
 ```bash
 kubectl get pods --field-selector status.phase=Running
@@ -367,7 +367,7 @@ API允许以声明性方式管理配置。
 
 核心Kubernetes API具有灵活性，也可以扩展以支持自定义资源。
 
-* 工作负载资源（Workload Resources）
+- 工作负载资源（Workload Resources）
   - *Pod*。Pod 是可以在主机上运行的容器集合。
   - *PodTemplate*。PodTemplate 描述了预定义 pod 的副本模板。
   - *ReplicationController*。ReplicationController 表示一个复制控制器的配置。
@@ -381,13 +381,13 @@ API允许以声明性方式管理配置。
   - *HorizontalPodAutoscaler*。HorizontalPodAutoscaler 表示水平 pod 自动缩放器的配置。
   - *HorizontalPodAutoscaler v2beta2*。HorizontalPodAutoscaler 是水平 pod 自动缩放器的配置，根据指定的指标自动管理实现比例子资源的任何资源的副本计数。
   - *PriorityClass*。PriorityClass 定义了从优先级类名称到优先级整数值的映射。
-* 服务资源（Service Resources）
+- 服务资源（Service Resources）
   - *Service*. Service 是对软件服务（例如mysql）的命名抽象，由代理监听的本地端口（例如3306）和确定哪些Pod将回答通过代理发送的请求的选择器组成。
   - *Endpoints*. Endpoints 是实现实际服务的一组终结点。
   - *EndpointSlice*. EndpointSlice 表示实现服务的终结点的子集。
   - *Ingress*. Ingress 是一组规则，允许入站连接到达由后端定义的终结点。
   - *IngressClass*. IngressClass 表示 Ingress 的类，由 Ingress Spec 引用。
-* 配置和存储资源（Config and Storage Resources）
+- 配置和存储资源（Config and Storage Resources）
   - *ConfigMap*。ConfigMap保存容器需要使用的配置数据。
   - *Secret*。Secret保存特定类型的机密数据。
   - *Volume*。Volume表示Pod中的命名卷，可以被Pod中的任何容器访问。
@@ -398,7 +398,7 @@ API允许以声明性方式管理配置。
   - *CSIDriver*。CSIDriver记录集群上部署的容器存储接口（CSI）卷驱动程序的信息。
   - *CSINode*。CSINode保存有关节点上安装的所有CSI驱动程序的信息。
   - *CSIStorageCapacity*。CSIStorageCapacity存储一个CSI GetCapacity调用的结果。
-* 认证资源（Authentication Resources）
+- 认证资源（Authentication Resources）
   - ServiceAccount*。ServiceAccount和下面的信息绑定在一起：
     - 一个可被用户和周边系统理解的名称，用于身份识别
     - 可进行身份验证和授权的主体
@@ -406,7 +406,7 @@ API允许以声明性方式管理配置。
   - TokenRequest*。TokenRequest为给定的ServiceAccount请求一个令牌。
   - TokenReview*。TokenReview尝试对已知用户的令牌进行身份验证。
   - CertificateSigningRequest*。CertificateSigningRequest对象提供了一种通过提交证书签名请求并异步批准和发放来获取x509证书的机制。
-* 授权资源（Authorization Resources）
+- 授权资源（Authorization Resources）
   - LocalSubjectAccessReview*。LocalSubjectAccessReview检查一个用户或组在给定命名空间中是否能执行某个操作。
   - SelfSubjectAccessReview*。SelfSubjectAccessReview检查当前用户是否能执行某个操作。
   - SelfSubjectRulesReview*。SelfSubjectRulesReview枚举当前用户在一个命名空间内可以执行的操作集合。
@@ -415,17 +415,17 @@ API允许以声明性方式管理配置。
   - ClusterRoleBinding*。ClusterRoleBinding引用一个ClusterRole，但不包含它。
   - Role*。Role是一个命名空间级别的PolicyRules逻辑分组，可以被RoleBinding引用为一个单元。
   - RoleBinding*。RoleBinding引用一个Role，但不包含它。
-* 策略资源（Policy Resources）
+- 策略资源（Policy Resources）
   - LimitRange*。LimitRange为命名空间中每种资源设置资源使用限制。
   - ResourceQuota*。ResourceQuota设置每个命名空间强制执行的总配额限制。
   - NetworkPolicy*。NetworkPolicy描述了一组Pod允许的网络流量。
   - PodDisruptionBudget*。PodDisruptionBudget是一个对象，用于定义对一组Pod可能造成的最大中断。
   - PodSecurityPolicy v1beta1*。PodSecurityPolicy控制对可能影响将应用于Pod和容器的安全上下文的请求的能力。
-* 扩展资源（Extend Resources）
+- 扩展资源（Extend Resources）
   - CustomResourceDefinition*。CustomResourceDefinition表示应在API服务器上公开的资源。
   - MutatingWebhookConfiguration*。MutatingWebhookConfiguration描述接受或拒绝并可能更改对象的准入Webhook的配置。
   - ValidatingWebhookConfiguration*。ValidatingWebhookConfiguration描述接受或拒绝对象但不更改对象的准入Webhook的配置。
-* 集群资源（Cluster Resources）
+- 集群资源（Cluster Resources）
   - Node*。Node是Kubernetes中的工作节点。
   - Namespace*。Namespace为名称提供了作用域。
   - Event*。Event是对集群中某个位置发生事件的报告。
