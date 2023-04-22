@@ -1,13 +1,16 @@
-# Job and Cronjob
+# CKA自学笔记14:Job and Cronjob
+
 ## Job
 
-!!! Scenario
-    * Create Job.
+演示场景：
 
-Demo:
+* 创建Job。
 
-Create Job `pi`.
-```console
+演示：
+
+创建Job `pi`。
+
+```bash
 kubectl apply -f - << EOF
 apiVersion: batch/v1
 kind: Job
@@ -26,40 +29,42 @@ EOF
 
 ```
 
-Get details of Job.
-```console
+获取Job的详细信息。
+
+```bash
 kubectl get jobs
 ```
 
-Get details of Job Pod. The status `Completed` means the job was done successfully.
-```console
+获取Job的Pod的详细信息。 `Completed` 的状态代表这个job已经成功完成了。
+
+```bash
 kubectl get pod
 ```
 
-Get log info of the Job Pod.
-```console
+获取Job的Pod的日志信息。
+
+```bash
 kubectl pi-2s74d
 3.141592653589793..............
 ```
 
+删除所创建的资源。
 
-Clean up
-```console
+```bash
 kubectl delete job pi
 ```
 
-
-
-
 ## Cronjob
 
-!!! Scenario
-    * Create Cronjob.
+演示场景：
 
-Demo:
+* 创建Cronjob。
 
-Create Cronjob `hello`.
-```console
+演示：
+
+创建Cronjob `hello`。
+
+```bash
 kubectl apply -f - << EOF
 apiVersion: batch/v1
 kind: CronJob
@@ -83,22 +88,27 @@ EOF
 
 ```
 
-Get detail of Cronjob
-```console
+获取Cronjob的详细信息。
+
+```bash
 kubectl get cronjobs -o wide
 ```
-Result
-```
+
+运行结果
+
+```console
 NAME    SCHEDULE      SUSPEND   ACTIVE   LAST SCHEDULE   AGE   CONTAINERS   IMAGES    SELECTOR
 hello   */1 * * * *   False     0        <none>          25s   hello        busybox   <none>
 ```
 
-Monitor Jobs. Every 1 minute a new job will be created. 
-```console
+监控Jobs。每隔1分钟，一个新的job会被创建。
+
+```bash
 kubectl get jobs -w
 ```
 
-Clean up
-```console
+删除创建的资源。
+
+```bash
 kubectl delete cronjob hello
 ```

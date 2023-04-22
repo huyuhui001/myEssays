@@ -1,35 +1,37 @@
-# Persistence
+# CKA自学笔记17:Persistence
 
-!!! Scenario
-    * Creat Pod with `emptyDir` type Volume. Container in the Pod will mount default directory `/var/lib/kubelet/pods/` on running node.
-    * Create Deployment `Deployment` with `hostPath` type volume. Container in the Deployment will mount directory defined in `hostPath:` on running node.
-    * PV and PVC.
-        * Set up NFS Server and share folder `/nfsdata/`.
-        * Create PV `mysql-pv` to link to the share folder `/nfsdata/` and set StorageClassName `nfs`.
-        * Create PVC `mysql-pvc` mapped with StorageClassName `nfs`.
-        * Create Deployment `mysql` to consume PVC `mysql-pvc`.
-    * StorageClass
-        * Create ServiceAccount `nfs-client-provisioner`.
-        * Create ClusterRole `nfs-client-provisioner-runner` and Role `leader-locking-nfs-client-provisioner` and bind them to the ServiceAccount so the     ServiceAccount has authorization to operate the Deployment created in next step.
-        * Create Deployment `nfs-client-provisioner` to to add connection information for your NFS server, e.g, `PROVISIONER_NAME` is `k8s-sigs.io/    nfs-subdir-external-provisioner`
-        * Create StorageClass `nfs-client` link to `provisioner: k8s-sigs.io/nfs-subdir-external-provisioner`. Releated PV is created automatically.
-        * Create PVC `nfs-pvc-from-sc` mapped to PV and StorageClass `nfs-client`.
-    * Configuration
-        * Create a ConfigMap for content of a file, and mount this ConfigMap to a specific file in a Pod.
-        * Create a ConfigMap for username and password, and consume them within a Pod.
-        * Use ConfigMap as environment variables in Pod. 
+## 摘要
 
+演示场景：
 
+* 创建一个类型为 `emptyDir` 的卷来创建 Pod，Pod 中的容器将会挂载在运行节点上的默认目录 `/var/lib/kubelet/pods/` 中。
+* 创建一个类型为 `hostPath` 的卷来创建 Deployment，Deployment 中的容器将会挂载在运行节点上定义的目录 `hostPath:` 中。
+* 创建 PV 和 PVC：
+  * 设置 NFS 服务器并共享 `/nfsdata/` 目录。
+  * 创建 PV `mysql-pv` 并映射到共享目录 `/nfsdata/`，同时设置 StorageClassName 为 `nfs`。
+  * 创建 PVC `mysql-pvc` 并映射到 StorageClassName 为 `nfs` 的 PV 上。
+  * 创建 Deployment `mysql` 来使用 PVC `mysql-pvc`。
+* 创建 StorageClass：
+  * 创建 ServiceAccount `nfs-client-provisioner`。
+  * 创建 ClusterRole `nfs-client-provisioner-runner` 和 Role `leader-locking-nfs-client-provisioner`，并将其绑定到 ServiceAccount 上，以便该 ServiceAccount 可以操作下一步中创建的 Deployment。
+  * 创建 Deployment `nfs-client-provisioner` 来添加连接到 NFS 服务器的信息，例如 `PROVISIONER_NAME` 是 `k8s-sigs.io/nfs-subdir-external-provisioner`。
+  * 创建 StorageClass `nfs-client` 并链接到 `provisioner: k8s-sigs.io/nfs-subdir-external-provisioner`，相关的 PV 会自动创建。
+  * 创建 PVC `nfs-pvc-from-sc` 并映射到 StorageClass `nfs-client` 上的 PV。
+* 配置Configuration：
+  * 创建一个 ConfigMap 以包含文件的内容，并将此 ConfigMap 挂载到 Pod 中的特定文件中。
+  * 创建一个 ConfigMap 来包含用户名和密码，并在 Pod 中使用它们。
+  * 在 Pod 中将 ConfigMap 用作环境变量。
 
-!!! Tips
-    * Delete PVC first, then delete PV.
-    * If facing `Terminating` status when delete a PVC, use `kubectl edit pvc <your_pvc_name>` and remove `finalize: <your_value>`.
+建议：
 
+* 首先删除 PVC，然后再删除 PV。
+* 如果删除 PVC 时遇到 `Terminating` 状态，使用 `kubectl edit pvc <your_pvc_name>` 命令，然后删除 `finalize: <your_value>`。
 
 ## emptyDir
 
-Create a Pod `hello-producer` with `emptyDir` type Volume.
-```console
+创建一个名为 `hello-producer` 的 Pod，并使用 `emptyDir` 类型的 Volume。
+
+```bash
 cat > pod-emptydir.yaml <<EOF
 apiVersion: v1
 kind: Pod
@@ -51,77 +53,87 @@ spec:
    emptyDir: {}
 EOF
 
-
 kubectl apply -f pod-emptydir.yaml
 ```
 
-The Pod `hello-producer` is running on node `cka003`. 
-```console
+查看Pod `hello-producer`的状态。
+
+```bash
 kubectl get pod hello-producer -owide
 ```
-The Pod is running on node `cka003`.
-```
+
+Pod `hello-producer` 运行在节点node `cka003`上。
+
+```console
 NAME             READY   STATUS    RESTARTS   AGE   IP              NODE     NOMINATED NODE   READINESS GATES
 hello-producer   1/1     Running   0          6s    10.244.102.24   cka003   <none>           <none>
 ```
 
-Log onto `cka003` because the Pod `hello-producer` is running on the node.
+登录 `cka003`，因为 Pod `hello-producer` 正在该节点上运行。
 
-Set up the environment `CONTAINER_RUNTIME_ENDPOINT` for command `crictl`. Suggest to do the same for all nodes.
-```console
+为 `crictl` 命令设置环境变量 `CONTAINER_RUNTIME_ENDPOINT`。建议在所有节点上执行相同的操作。
+
+```bash
 export CONTAINER_RUNTIME_ENDPOINT=unix:///run/containerd/containerd.sock
 ```
 
-Run command `crictl ps` to get the container ID of Pod `hello-producer`.
-```console
+运行命令 `crictl ps` 来获取 Pod `hello-producer` 的容器 ID。
+
+```bash
 crictl ps |grep hello-producer
 ```
 
-The ID of container `producer` is `05f5e1bb6a1bb`.
-```
+容器 `producer` 的ID是 `05f5e1bb6a1bb`。
+
+```console
 CONTAINER           IMAGE               CREATED             STATE               NAME                ATTEMPT             POD ID              POD
 50058afb3cba5       62aedd01bd852       About an hour ago   Running             producer            0                   e6953bd4833a7       hello-producer
 ```
 
-Run command `crictl inspect` to get the path of mounted `shared-volume`, which is `emptyDir`.
-```console
+运行命令 `crictl inspect`，获取已挂载的 `shared-volume` 的路径，它是 `emptyDir` 类型的。
+
+```bash
 crictl inspect 50058afb3cba5 | grep source | grep empty
 ```
-The result is below.
-```
+
+运行结果
+
+```console
 "source": "/var/lib/kubelet/pods/d7424f86-534a-48f9-9001-9d2a6e822b12/volumes/kubernetes.io~empty-dir/shared-volume",
 ```
 
-Change the path to the path of mounted `shared-volume` we get above. We will see the content `hello world` of file `hello`. 
-```console
+修改路径为上面获取到的 `shared-volume` 的挂载路径。然后我们会看到文件 `hello` 中的内容 `hello world`。
+
+```bash
 cd /var/lib/kubelet/pods/d7424f86-534a-48f9-9001-9d2a6e822b12/volumes/kubernetes.io~empty-dir/shared-volume
 cat hello
 ```
 
-The path `/producer_dir` inside the Pod is mounted to the local host path `/var/lib/kubelet/pods/d7424f86-534a-48f9-9001-9d2a6e822b12/volumes/kubernetes.io~empty-dir/shared-volume`.
+Pod内的路径`/producer_dir`被挂载到了本地宿主机路径`/var/lib/kubelet/pods/d7424f86-534a-48f9-9001-9d2a6e822b12/volumes/kubernetes.io~empty-dir/shared-volume`。
 
-The file `/producer_dir/hello` we created inside the Pod is actually in the host local path.
+我们在Pod内创建的文件`/producer_dir/hello`实际上在宿主机本地路径中。
 
-Let's delete the container `producer`, the container `producer` will be started again with new container ID and the file `hello` is still there.
-```console
+让我们删除容器`producer`，容器`producer`将以新的容器ID重新启动，而文件`hello`仍将存在。
+
+```bash
 crictl ps
 crictl stop <your_container_id>
 crictl rm <your_container_id>
 ```
 
-Let's delete the Pod `hello-producer`, the container `producer` is deleted, file `hello` is deleted.
-```console
+现在删除Pod `hello-producer`，容器`producer`会被删除，文件`hello`也会被删除。
+
+```bash
 kubectl delete pod hello-producer 
 ```
 
-
-
 ## hostPath
 
-Apply below yaml file to create a MySQL Pod and mount a `hostPath`.
-It'll mount host directory `/tmp/mysql` to Pod directory `/var/lib/mysql`.
-Check locally if directory `/tmp/mysql` is in place. If not, create it using `mkdir /tmp/mysql`.
-```console
+应用以下 yaml 文件创建一个 MySQL Pod 并挂载一个 `hostPath`。
+将主机目录 `/tmp/mysql` 挂载到 Pod 目录 `/var/lib/mysql`。
+在本地检查是否存在目录 `/tmp/mysql`，如果不存在，则执行命令 `mkdir /tmp/mysql` 创建它。
+
+```bash
 cat > mysql-hostpath.yaml <<EOF
 apiVersion: apps/v1
 kind: Deployment
@@ -157,44 +169,47 @@ EOF
 kubectl apply -f mysql-hostpath.yaml
 ```
 
+验证 MySQL 可用性。
 
-Verify MySQL Availability
+检查 MySQL Pod 的状态。需要记录 Pod 的名称和其所运行的节点。
 
-Check status of MySQL Pod. Need document the Pod name and node it's running on.
-```console
+```bash
 kubectl get pod -l app=mysql -o wide
 ```
-Result
-```
+
+运行结果
+
+```console
 NAME                     READY   STATUS              RESTARTS   AGE   IP       NODE     NOMINATED NODE   READINESS GATES
 mysql-749c8ddd67-h2rgs   0/1     ContainerCreating   0          28s   <none>   cka003   <none>           <none>
 ```
 
-Attach into the MySQL Pod on the running node.
-```console
+在MySQL Pod运行的节点登陆进入pod内部。
+
+```bash
 kubectl exec -it <your_pod_name> -- bash
 ```
 
-Within the Pod, go to directory `/var/lib/mysql`, all files in the directory are same with all files in directory `/tmp/mysql` on node `cka003`.
+在 Pod 中，进入 `/var/lib/mysql` 目录，该目录中的所有文件都与节点 `cka003` 上 `/tmp/mysql` 目录中的所有文件相同。
 
-Connect to the database in the Pod.
-```console
+连接到 Pod 中的数据库。
+
+```bash
 mysql -h 127.0.0.1 -uroot -ppassword
 ```
 
-Operate the database.
-```
+执行下面命令对数据库进行简单的操作。
+
+```bash
 mysql> show databases;
 mysql> connect mysql;
 mysql> show tables;
 mysql> exit
 ```
 
+## PV和PVC
 
-
-## PV and PVC
-
-Here we will use NFS as backend storage to demo how to deploy PV and PVC.
+下面的演示中，我们将使用NFS作为后端存储来演示如何部署PV和PVC。
 
 ### Set up NFS Share
 
@@ -202,7 +217,8 @@ Here we will use NFS as backend storage to demo how to deploy PV and PVC.
 
 Log onto `cka002`.
 
-Choose one Worker `cka002` to build NFS server. 
+Choose one Worker `cka002` to build NFS server.
+
 ```console
 sudo apt-get install -y nfs-kernel-server
 ```
@@ -210,11 +226,13 @@ sudo apt-get install -y nfs-kernel-server
 2. Configure Share Folder
 
 Create share folder.  
+
 ```console
 mkdir /nfsdata
 ```
 
 Append one line in file `/etc/exports`.
+
 ```console
 cat >> /etc/exports << EOF
 /nfsdata *(rw,sync,no_root_squash)
@@ -231,90 +249,96 @@ There are many different NFS sharing options, including these:
 * `root_squash`: Map the root user and group account from the NFS client to the anonymous accounts, typically either the nobody account or the nfsnobod* `account. See the next section, “User ID Mapping,” for more details. (Note that this is a default option.)
 * `no_root_squash`: Map the root user and group account from the NFS client to the local root and group accounts.
 
-
-We will use password-free remote mount based on `nfs` and `rpcbind` services between Linux servers, not based on `smb` service. 
+We will use password-free remote mount based on `nfs` and `rpcbind` services between Linux servers, not based on `smb` service.
 The two servers must first grant credit, install and set up nfs and rpcbind services on the server side, set the common directory, start the service, and mount it on the client
 
 Start `rpcbind` service.
+
 ```console
 sudo systemctl enable rpcbind
 sudo systemctl restart rpcbind
 ```
 
 Start `nfs` service.
+
 ```console
 sudo systemctl enable nfs-server
 sudo systemctl start nfs-server
 ```
 
 Once `/etc/exports` is changed, we need run below command to make change effected.
+
 ```console
 exportfs -ra
 ```
+
 Result
+
 ```
 exportfs: /etc/exports [1]: Neither 'subtree_check' or 'no_subtree_check' specified for export "*:/nfsdata".
   Assuming default behaviour ('no_subtree_check').
   NOTE: this default has changed since nfs-utils version 1.0.x
 ```
 
-Check whether sharefolder is configured. 
+Check whether sharefolder is configured.
+
 ```console
 showmount -e
 ```
+
 And see below output.
+
 ```
 Export list for cka002:
 /nfsdata *
 ```
 
-
-
 3. Install NFS Client
 
 Install NFS client on all nodes.
+
 ```console
 sudo apt-get install -y nfs-common
 ```
-
-
 
 4. Verify NFS Server
 
 Log onto any nodes to verify NFS service and sharefolder list.
 
 Log onto `cka001` and check sharefolder status on `cka002`.
+
 ```console
 showmount -e cka002
 ```
+
 Below result will be shown if no issues.
+
 ```
 Export list for cka002:
 /nfsdata *
 ```
 
-
-
 5. Mount NFS
 
 Execute below command to mount remote NFS folder on any other non-NFS-server node, e.g., `cka001` or `cka003`.
+
 ```console
 mkdir /remote-nfs-dir
 mount -t nfs cka002:/nfsdata /remote-nfs-dir/
 ```
 
 Use command `df -h` to verify mount point. Below is the sample output.
+
 ```
 Filesystem       Size  Used Avail Use% Mounted on
 cka002:/nfsdata   40G  5.8G   32G  16% /remote-nfs-dir
 ```
 
-
-
 ### Create PV
 
-Create a PV `mysql-pv`. 
+Create a PV `mysql-pv`.
 Replace the NFS Server IP with actual IP (here is `<cka002_ip>`) that NFS server `cka002` is running on.
+
 ```console
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -335,20 +359,23 @@ EOF
 ```
 
 Check the PV.
+
 ```console
 kubectl get pv
 ```
+
 The result:
+
 ```
 NAME       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
 mysql-pv   1Gi        RWO            Retain           Available           nfs                     19s
 ```
 
-
 ### Create PVC
 
-Create a PVC `mysql-pvc` and specify storage size, access mode, and storage class. 
-The PVC `mysql-pvc` will be binded with PV automatically via storage class name. 
+Create a PVC `mysql-pvc` and specify storage size, access mode, and storage class.
+The PVC `mysql-pvc` will be binded with PV automatically via storage class name.
+
 ```console
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -365,11 +392,10 @@ spec:
 EOF
 ```
 
-
-
 ### Consume PVC
 
 Update the Deployment `mysql` to consume the PVC created.
+
 ```console
 kubectl apply -f - <<EOF
 apiVersion: apps/v1
@@ -407,9 +433,6 @@ EOF
 
 Now we can see MySQL files were moved to directory `/nfsdata` on `cka002`
 
-
-
-
 ## StorageClass
 
 ### Configure RBAC Authorization
@@ -425,8 +448,8 @@ RBAC authorization uses the rbac.authorization.k8s.io API group to drive authori
 * Role: `leader-locking-nfs-client-provisioner`. Grant authorization on endpoint.
 * RoleBinding: `leader-locking-nfs-client-provisioner`, bind above Role to above ServiceAccount.
 
-
 Create RBAC Authorization.
+
 ```console
 cat > nfs-provisioner-rbac.yaml <<EOF
 apiVersion: v1
@@ -503,11 +526,11 @@ EOF
 kubectl apply -f nfs-provisioner-rbac.yaml
 ```
 
-
 ### Create Provisioner's Deloyment
 
-Create Deloyment `nfs-client-provisioner` by consuming volume `nfs-client-root` mapped to `/nfsdata` on `<cka002_ip>`(`cka002`). 
+Create Deloyment `nfs-client-provisioner` by consuming volume `nfs-client-root` mapped to `/nfsdata` on `<cka002_ip>`(`cka002`).
 Replace NFS server IP with actual IP (here is `<cka002_ip>`)
+
 ```console
 cat > nfs-provisioner-deployment.yaml <<EOF
 apiVersion: apps/v1
@@ -550,14 +573,16 @@ EOF
 kubectl apply -f nfs-provisioner-deployment.yaml
 ```
 
-
 ### Create NFS StorageClass
 
 Create StorageClass `nfs-client`. Define the NFS subdir external provisioner's Kubernetes Storage Class.
+
 ```console
 vi nfs-storageclass.yaml
 ```
+
 And add below info to create NFS StorageClass.
+
 ```
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -572,14 +597,15 @@ parameters:
 ```
 
 Apply the yaml file.
+
 ```console
 kubectl apply -f nfs-storageclass.yaml
 ```
 
-
 ### Create PVC
 
 Create PVC `nfs-pvc-from-sc`.
+
 ```console
 kubectl apply -f - <<EOF
 kind: PersistentVolumeClaim
@@ -597,20 +623,26 @@ EOF
 ```
 
 Check the PVC status we ceated.
+
 ```console
 kubectl get pvc nfs-pvc-from-sc
 ```
+
 The status is `Pending`.
+
 ```
 NAME              STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 nfs-pvc-from-sc   Pending                                      nfs-client     112s
 ```
 
 Check pending reason
+
 ```console
 kubectl describe pvc nfs-pvc-from-sc
 ```
+
 It's pending on waiting for a volume to be created.
+
 ```
 Events:
   Type    Reason                Age               From                         Message
@@ -618,12 +650,10 @@ Events:
   Normal  ExternalProvisioning  9s (x6 over 84s)  persistentvolume-controller  waiting for a volume to be created, either by external provisioner "k8s-sigs.io/nfs-subdir-external-provisioner" or manually created by system administrator
 ```
 
-
-
-
 ### Consume PVC
 
 Create Deployment `mysql-with-sc-pvc` to consume the PVC `nfs-pvc-from-sc`.
+
 ```console
 kubectl apply -f - <<EOF
 apiVersion: apps/v1
@@ -658,53 +688,65 @@ spec:
 EOF
 ```
 
-
 Check the Deployment status.
+
 ```console
 kubectl get deployment mysql-with-sc-pvc -o wide
 ```
+
 Result
+
 ```
 NAME                READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES      SELECTOR
 mysql-with-sc-pvc   1/1     1            1           16s   mysql        mysql:8.0   app=mysql
 ```
 
 With the comsumption from Deployment `mysql-with-sc-pvc`, the status of PVC `nfs-pvc-from-sc` is now status `Bound` from `Pending`.
+
 ```console
 kubectl get pvc nfs-pvc-from-sc
 ```
+
 Result
+
 ```
 NAME              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 nfs-pvc-from-sc   Bound    pvc-edf70dff-7407-4b38-aac9-9c2dd6a84316   1Gi        RWX            nfs-client     52m
 ```
 
 Check related Pods status. Be noted that the Pod `mysql-with-sc-pvc-7c97d875f8-dwfkc` is running on `cka003`.
+
 ```console
 kubectl get pod -o wide -l app=mysql
 ```
+
 Result
+
 ```
 NAME                                 READY   STATUS    RESTARTS   AGE     IP              NODE     NOMINATED NODE   READINESS GATES
 mysql-774db46945-h82kk               1/1     Running   0          69m     10.244.112.26   cka002   <none>           <none>
 mysql-with-sc-pvc-7c97d875f8-wkvr9   1/1     Running   0          3m37s   10.244.102.27   cka003   <none>           <none>
 ```
 
-Let's check directory `/nfsdata/` on NFS server `cka002`. 
+Let's check directory `/nfsdata/` on NFS server `cka002`.
+
 ```console
 ll /nfsdata/
 ```
+
 Two folders were created. Same content of `/remote-nfs-dir/` on other nodes.
+
 ```
 drwxrwxrwx  6 systemd-coredump root 4096 Jul 23 23:35 dev/
 drwxr-xr-x  6 systemd-coredump root 4096 Jul 23 22:29 mysqldata/
 ```
 
 Namespace name is used as folder name under directory `/nfsdata/` and it is mounted to Pod.
-By default, namespace name will be used at mount point. 
+By default, namespace name will be used at mount point.
 If we want to use customized folder for that purpose, we need claim an annotation `nfs.io/storage-path`, e.g., below example.
 
 Create PVC test-claim on Namespace `kube-system` and consume volume `nfs-client`.
+
 ```console
 kubectl apply -f - <<EOF
 kind: PersistentVolumeClaim
@@ -724,13 +766,16 @@ spec:
 EOF
 ```
 
-In above case, the PVC was created in `kube-system` Namespace, hence we can see directory `test-path` is under directory`kube-system` on node `cka002`. 
+In above case, the PVC was created in `kube-system` Namespace, hence we can see directory `test-path` is under directory`kube-system` on node `cka002`.
 
 Overall directory structure of folder `/nfsdata/` looks like below.
+
 ```console
 tree -L 1 /nfsdata/ 
 ```
+
 Result
+
 ```
 /nfsdata/
 ├── dev
@@ -742,17 +787,18 @@ Please be noted that above rule is following `nfs-subdir-external-provisioner` i
 
 Detail about `nfs-subdir-external-provisioner` project is [here](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner)
 
-
-
 ## Configuration
 
 ### ConfigMap
 
 Create ConfigMap `cm-nginx` to define content of `nginx.conf`.
+
 ```console
 vi configmap.yaml
 ```
+
 Paste below content.
+
 ```
 apiVersion: v1
 kind: ConfigMap
@@ -797,11 +843,13 @@ data:
 ```
 
 Apply the ConfigMap.
+
 ```console
 kubectl apply -f configmap.yaml
 ```
 
 Create Pod `nginx-with-cm`.
+
 ```console
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -824,22 +872,20 @@ EOF
 ```
 
 !!! Note
-    * By default to mount ConfigMap, Kubernetes will overwrite all content of the mount point. We can use `volumeMounts.subPath` to specify that only overwrite the file `nginx.conf` defined in `mountPath`.
+    *By default to mount ConfigMap, Kubernetes will overwrite all content of the mount point. We can use `volumeMounts.subPath` to specify that only overwrite the file `nginx.conf` defined in `mountPath`.
     * Is we use `volumeMounts.subPath` to mount a Container Volume, Kubernetes won't do hot update to reflect real-time update.
 
-
 Verify if the `nginx.conf` mounted from outside is in the Container by comparing with above file.
+
 ```console
 kubectl exec -it nginx-with-cm -- sh 
 cat /etc/nginx/nginx.conf
 ```
 
-
-
-
 ### Secret
 
 Encode password with base64  
+
 ```console
 echo -n admin | base64  
 YWRtaW4=
@@ -849,6 +895,7 @@ MTIzNDU2
 ```
 
 Create Secret `mysecret`.
+
 ```console
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -862,6 +909,7 @@ EOF
 ```
 
 Using Volume to mount (injection) Secret to a Pod.
+
 ```console
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -887,16 +935,21 @@ EOF
 ```
 
 Let's attach to the Pod `busybox-with-secret` to verify if two data elements of `mysecret` are successfully mounted to the path `/tmp/secret` within the Pod.
+
 ```console
 kubectl exec -it busybox-with-secret -- sh
 ```
-By executing below command, we can see two data elements are in the directory `/tmp/secret` as file type. 
+
+By executing below command, we can see two data elements are in the directory `/tmp/secret` as file type.
+
 ```console
 / # ls -l /tmp/secret/
 lrwxrwxrwx    1 root     root            15 Jul 23 16:30 password -> ..data/password
 lrwxrwxrwx    1 root     root            15 Jul 23 16:30 username -> ..data/username
 ```
+
 And we can get the content of each element, which are predefined before.
+
 ```console
 / # cat /tmp/secret/username
 admin
@@ -905,13 +958,11 @@ admin
 123456
 ```
 
-
-
 ### Additional Cases
 
 #### Various way to create ConfigMap
 
-ConfigMap can be created by file, directory, or value. 
+ConfigMap can be created by file, directory, or value.
 
 Let's create a ConfigMap `colors` includes:
 
@@ -930,7 +981,9 @@ echo k > primary/black
 echo "known as key" >> primary/black
 echo blue > favorite
 ```
+
 Final structure looks like below via command `tree configmap`.
+
 ```
 configmap
 ├── favorite
@@ -942,6 +995,7 @@ configmap
 ```
 
 Create ConfigMap referring above files we created. Make sure we are now in the path `~/configmap`.
+
 ```console
 kubectl create configmap colors \
 --from-literal=text=black  \
@@ -950,9 +1004,11 @@ kubectl create configmap colors \
 ```
 
 Check content of the ConfigMap `colors`.
+
 ```console
 kubectl get configmap colors -o yaml
 ```
+
 ```
 apiVersion: v1
 data:
@@ -977,12 +1033,10 @@ metadata:
   uid: d5ab133f-5e4d-41d4-bc9e-2bbb22a872a1
 ```
 
-
-
-
 #### Set environment variable via ConfigMap
 
 Here we will create a Pod `pod-configmap-env` and set the environment variable `ilike` and assign value of `favorite` from ConfigMap `colors`.
+
 ```console
 kubectl apply -f - << EOF
 apiVersion: v1
@@ -1003,17 +1057,20 @@ EOF
 ```
 
 Attach to the Pod `pod-configmap-env`.
+
 ```console
 kubectl exec -it pod-configmap-env -- bash
 ```
 
 Verify the value of env variable `ilike` is `blue`, which is the value of `favorite` of ConfigMap `colors`.
+
 ```console
 root@pod-configmap-env:/# echo $ilike
 blue
 ```
 
 We can also use all key-value of ConfigMap to set up environment variables of Pod.
+
 ```console
 kubectl apply -f - << EOF
 apiVersion: v1
@@ -1031,11 +1088,13 @@ EOF
 ```
 
 Attach to the Pod `pod-configmap-env-2`.
+
 ```console
 kubectl exec -it pod-configmap-env-2 -- bash
 ```
 
 Verify the value of env variables based on key-values we defined in ConfigMap `colors`.
+
 ```console
 root@pod-configmap-env-2:/# echo $black
 k known as key
@@ -1044,6 +1103,3 @@ c
 root@pod-configmap-env-2:/# echo $favorite
 blue
 ```
-
-
-
