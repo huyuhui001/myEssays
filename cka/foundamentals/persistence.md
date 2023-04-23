@@ -211,135 +211,131 @@ mysql> exit
 
 下面的演示中，我们将使用NFS作为后端存储来演示如何部署PV和PVC。
 
-### Set up NFS Share
+### 设置NFS共享
 
-1. Install nfs-kernel-server
+1. 安装nfs-kernel-server
 
-Log onto `cka002`.
+登录到节点`cka002`。配置Worker `cka002`成为NFS服务器。
 
-Choose one Worker `cka002` to build NFS server.
-
-```console
+```bash
 sudo apt-get install -y nfs-kernel-server
 ```
 
-2. Configure Share Folder
+2.配置共享目录
 
-Create share folder.  
+创建共享文件夹。  
 
-```console
+```bash
 mkdir /nfsdata
 ```
 
-Append one line in file `/etc/exports`.
+编辑文件`/etc/exports`，添加一行`/nfsdata *(rw,sync,no_root_squash)`。
 
-```console
+```bash
 cat >> /etc/exports << EOF
 /nfsdata *(rw,sync,no_root_squash)
 EOF
 ```
 
-There are many different NFS sharing options, including these:
+有许多不同的NFS共享选项，例如：
 
-* `*`: accessable to all IPs, or specific IPs.
-* `rw`: Share as read-write. Keep in mind that normal Linux permissions still apply. (Note that this is a default option.)
-* `ro`: Share as read-only.
-* `sync`: File data changes are made to disk immediately, which has an impact on performance, but is less likely to result in data loss. On som* `distributions this is the default.
-* `async`: The opposite of sync; file data changes are made initially to memory. This speeds up performance but is more likely to result in data loss. O* `some distributions this is the default.
-* `root_squash`: Map the root user and group account from the NFS client to the anonymous accounts, typically either the nobody account or the nfsnobod* `account. See the next section, “User ID Mapping,” for more details. (Note that this is a default option.)
-* `no_root_squash`: Map the root user and group account from the NFS client to the local root and group accounts.
+* `*`：对所有IP或特定IP可访问。
+* `rw`：作为读写共享。请注意，正常的Linux权限仍然适用。（请注意，这是默认选项。）
+* `ro`：作为只读共享。
+* `sync`：文件数据更改会立即写入磁盘，这会影响性能，但不太可能导致数据丢失。在某些发行版上，这是默认选项。
+* `async`：与sync相反，文件数据更改最初写入内存。这提高了性能，但更容易导致数据丢失。在某些发行版上，这是默认选项。
+* `root_squash`：将NFS客户端的root用户和组帐户映射到匿名帐户，通常是nobody帐户或nfsnobody帐户。有关更多详细信息，请参见本文后续的“用户ID映射”。（请注意，这是默认选项。）
+* `no_root_squash`：将NFS客户端的root用户和组帐户映射到本地root和组帐户。
 
-We will use password-free remote mount based on `nfs` and `rpcbind` services between Linux servers, not based on `smb` service.
-The two servers must first grant credit, install and set up nfs and rpcbind services on the server side, set the common directory, start the service, and mount it on the client
+我们将使用基于Linux服务器之间的`nfs`和`rpcbind`服务的无密码远程挂载，而不是基于`smb`服务。首先，这两台服务器必须授权、安装并设置nfs和rpcbind服务，设置共享目录，启动服务，并在客户端上进行挂载。
 
-Start `rpcbind` service.
+启动`rpcbind`服务。
 
-```console
+```bash
 sudo systemctl enable rpcbind
 sudo systemctl restart rpcbind
 ```
 
-Start `nfs` service.
+启动`nfs`服务。
 
-```console
+```bash
 sudo systemctl enable nfs-server
 sudo systemctl start nfs-server
 ```
 
-Once `/etc/exports` is changed, we need run below command to make change effected.
+如果`/etc/exports`文件被修改，我们需要运行下面的命令使之生效。
 
-```console
+```bash
 exportfs -ra
 ```
 
-Result
+运行结果
 
-```
+```bash
 exportfs: /etc/exports [1]: Neither 'subtree_check' or 'no_subtree_check' specified for export "*:/nfsdata".
   Assuming default behaviour ('no_subtree_check').
   NOTE: this default has changed since nfs-utils version 1.0.x
 ```
 
-Check whether sharefolder is configured.
+检查共享目录是否已经被正确配置了。
 
-```console
+```bash
 showmount -e
 ```
 
-And see below output.
+如果看到下面的结果，则说明共享目录已经被正确配置了。
 
-```
+```console
 Export list for cka002:
 /nfsdata *
 ```
 
-3. Install NFS Client
+3.安装NFS客户端
 
-Install NFS client on all nodes.
+在所有节点上安装NFS客户端。
 
-```console
+```bash
 sudo apt-get install -y nfs-common
 ```
 
-4. Verify NFS Server
+4.验证NFS服务
 
-Log onto any nodes to verify NFS service and sharefolder list.
+登录到任何一个节点来验证NFS服务是否正确工作，以及NFS服务所共享到目录是否可见。
+登陆到`cka001`，并检查`cka002`的共享目录状态。
 
-Log onto `cka001` and check sharefolder status on `cka002`.
-
-```console
+```bash
 showmount -e cka002
 ```
 
-Below result will be shown if no issues.
+如果得到类似下面的结果，则说明NFS服务正常工作，包括共享目录。
 
-```
+```bash
 Export list for cka002:
 /nfsdata *
 ```
 
-5. Mount NFS
+5.挂载NFS共享目录
 
-Execute below command to mount remote NFS folder on any other non-NFS-server node, e.g., `cka001` or `cka003`.
+执行下面命令，挂载NFS共享目录到任何一个非NFS服务器节点，比如`cka001` or `cka003`。
 
-```console
+```bash
 mkdir /remote-nfs-dir
 mount -t nfs cka002:/nfsdata /remote-nfs-dir/
 ```
 
-Use command `df -h` to verify mount point. Below is the sample output.
+执行命令`df -h`来检查NFS挂载点是否正确，类似下面的结果。
 
-```
+```bash
 Filesystem       Size  Used Avail Use% Mounted on
 cka002:/nfsdata   40G  5.8G   32G  16% /remote-nfs-dir
 ```
 
-### Create PV
+### 创建 PV
 
-Create a PV `mysql-pv`.
-Replace the NFS Server IP with actual IP (here is `<cka002_ip>`) that NFS server `cka002` is running on.
+创建一个 PV `mysql-pv`。
+将 NFS 服务器 IP 替换为实际的 IP（这里是 `<cka002_ip>`），它是运行 NFS 服务器 `cka002` 的 IP。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: PersistentVolume
@@ -358,25 +354,25 @@ spec:
 EOF
 ```
 
-Check the PV.
+执行下面的命令，检查创建的PV。
 
-```console
+```bash
 kubectl get pv
 ```
 
-The result:
+运行结果
 
-```
+```bash
 NAME       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
 mysql-pv   1Gi        RWO            Retain           Available           nfs                     19s
 ```
 
-### Create PVC
+### 创建 PVC
 
-Create a PVC `mysql-pvc` and specify storage size, access mode, and storage class.
-The PVC `mysql-pvc` will be binded with PV automatically via storage class name.
+创建 PVC `mysql-pvc` 并指定存储大小、访问模式和存储类。
+PVC `mysql-pvc` 将通过存储类名称自动与 PV 绑定。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -392,11 +388,11 @@ spec:
 EOF
 ```
 
-### Consume PVC
+### 消费 PVC
 
-Update the Deployment `mysql` to consume the PVC created.
+更新Deployment `mysql` 来使用之前创建的PVC `mysql-pvc`。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
@@ -431,26 +427,36 @@ spec:
 EOF
 ```
 
-Now we can see MySQL files were moved to directory `/nfsdata` on `cka002`
+现在我们可以看到 MySQL 文件已经移动到了 `cka002` 的 `/nfsdata` 目录下。
 
 ## StorageClass
 
-### Configure RBAC Authorization
+### 配置RBAC权限
 
-RBAC authorization uses the rbac.authorization.k8s.io API group to drive authorization decisions, allowing you to dynamically configure policies through the Kubernetes API.
+RBAC（Role-Based Access Control，基于角色的访问控制）是 Kubernetes 中的一种授权机制，用于限制用户对资源的访问权限。
+我们可以为 Kubernetes 集群中的用户分配不同的角色，以限制他们在集群中的操作。
 
-* ServiceAccount: `nfs-client-provisioner`
-* namespace: `dev`
+要配置 RBAC 授权，需要执行以下步骤：
 
-* ClusterRole: `nfs-client-provisioner-runner`. Grant authorization on node, pv, pvc, sc, event.
-* ClusterRoleBinding: `run-nfs-client-provisioner`, bind above ClusterRole to above ServiceAccount.
+1. 为用户创建帐户
+2. 为帐户创建角色
+3. 为角色授予权限
+4. 将角色绑定到帐户
 
-* Role: `leader-locking-nfs-client-provisioner`. Grant authorization on endpoint.
-* RoleBinding: `leader-locking-nfs-client-provisioner`, bind above Role to above ServiceAccount.
+这些步骤中的每一步都需要创建 Kubernetes 对象，例如 `ServiceAccount`、`Role`、`ClusterRole`、`RoleBinding` 和 `ClusterRoleBinding`。
 
-Create RBAC Authorization.
+RBAC权限使用`rbac.authorization.k8s.io` API组来驱动授权决策，允许我们通过Kubernetes API动态配置策略。
 
-```console
+* ServiceAccount：`nfs-client-provisioner`
+* 命名空间：`dev`
+* ClusterRole：`nfs-client-provisioner-runner`。在节点、pv、pvc、sc和事件上授予授权（authorization）。
+* ClusterRoleBinding：`run-nfs-client-provisioner`，将上述ClusterRole绑定到上述ServiceAccount。
+* Role：`leader-locking-nfs-client-provisioner`。在endpoint上授予权限。
+* RoleBinding：`leader-locking-nfs-client-provisioner`，将上述Role绑定到上述ServiceAccount。
+
+创建RBAC权限。
+
+```bash
 cat > nfs-provisioner-rbac.yaml <<EOF
 apiVersion: v1
 kind: ServiceAccount
@@ -526,12 +532,14 @@ EOF
 kubectl apply -f nfs-provisioner-rbac.yaml
 ```
 
-### Create Provisioner's Deloyment
+### 创建Provisioner的Deloyment
 
-Create Deloyment `nfs-client-provisioner` by consuming volume `nfs-client-root` mapped to `/nfsdata` on `<cka002_ip>`(`cka002`).
-Replace NFS server IP with actual IP (here is `<cka002_ip>`)
+"Provisioner" 可以翻译成 "提供程序"，这个词可以指为 Kubernetes 集群中提供各种资源的服务程序，如动态存储卷提供程序 (Dynamic Provisioner)、网络存储卷提供程序 (CSI Driver) 等。
 
-```console
+创建 `nfs-client-provisioner` 部署，使用挂载到 `<cka002_ip>`(`cka002`) 上的 `/nfsdata` 目录的卷 `nfs-client-root`。
+把 NFS 服务器的 IP 替换为实际的 IP 地址即可（这里用 `<cka002_ip>` 表示）。
+
+```bash
 cat > nfs-provisioner-deployment.yaml <<EOF
 apiVersion: apps/v1
 kind: Deployment
@@ -573,17 +581,19 @@ EOF
 kubectl apply -f nfs-provisioner-deployment.yaml
 ```
 
-### Create NFS StorageClass
+### 创建 NFS StorageClass
 
-Create StorageClass `nfs-client`. Define the NFS subdir external provisioner's Kubernetes Storage Class.
+创建 StorageClass `nfs-client`，定义 NFS 子目录外部 provisioner 的 Kubernetes Storage Class。
 
-```console
+执行下面的命令编辑`nfs-storageclass.yaml`文件。
+
+```bash
 vi nfs-storageclass.yaml
 ```
 
-And add below info to create NFS StorageClass.
+添加下面的信息来配置 NFS StorageClass。
 
-```
+```bash
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -596,17 +606,17 @@ parameters:
   onDelete: delete
 ```
 
-Apply the yaml file.
+应用上面的yaml文件，使之生效。
 
 ```console
 kubectl apply -f nfs-storageclass.yaml
 ```
 
-### Create PVC
+### 创建PVC
 
-Create PVC `nfs-pvc-from-sc`.
+创建 PVC `nfs-pvc-from-sc`。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -622,39 +632,39 @@ spec:
 EOF
 ```
 
-Check the PVC status we ceated.
+查看所创建的 PVC `nfs-pvc-from-sc` 的状态。
 
-```console
+```bash
 kubectl get pvc nfs-pvc-from-sc
 ```
 
-The status is `Pending`.
+PVC `nfs-pvc-from-sc` 的当前状态是 `Pending`.
 
-```
+```console
 NAME              STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 nfs-pvc-from-sc   Pending                                      nfs-client     112s
 ```
 
-Check pending reason
+检查 `Pending` 状态的原因。
 
-```console
+```bash
 kubectl describe pvc nfs-pvc-from-sc
 ```
 
-It's pending on waiting for a volume to be created.
+下面的信息说明 PVC `nfs-pvc-from-sc` 处于挂起状态，在等待卷（volume）创建完成。
 
-```
+```console
 Events:
   Type    Reason                Age               From                         Message
   ----    ------                ----              ----                         -------
   Normal  ExternalProvisioning  9s (x6 over 84s)  persistentvolume-controller  waiting for a volume to be created, either by external provisioner "k8s-sigs.io/nfs-subdir-external-provisioner" or manually created by system administrator
 ```
 
-### Consume PVC
+### 消费PVC
 
-Create Deployment `mysql-with-sc-pvc` to consume the PVC `nfs-pvc-from-sc`.
+创建 Deployment `mysql-with-sc-pvc` 以使用 PVC `nfs-pvc-from-sc`。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
@@ -688,66 +698,66 @@ spec:
 EOF
 ```
 
-Check the Deployment status.
+检查 Deployment `mysql-with-sc-pvc` 的状态。
 
-```console
+```bash
 kubectl get deployment mysql-with-sc-pvc -o wide
 ```
 
-Result
+运行结果：
 
-```
+```console
 NAME                READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES      SELECTOR
 mysql-with-sc-pvc   1/1     1            1           16s   mysql        mysql:8.0   app=mysql
 ```
 
-With the comsumption from Deployment `mysql-with-sc-pvc`, the status of PVC `nfs-pvc-from-sc` is now status `Bound` from `Pending`.
+使用 Deployment `mysql-with-sc-pvc` 消费 PVC `nfs-pvc-from-sc` 后，PVC 的状态从 `Pending` 变为了 `Bound`。
 
-```console
+```bash
 kubectl get pvc nfs-pvc-from-sc
 ```
 
-Result
+运行结果：
 
-```
+```console
 NAME              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 nfs-pvc-from-sc   Bound    pvc-edf70dff-7407-4b38-aac9-9c2dd6a84316   1Gi        RWX            nfs-client     52m
 ```
 
-Check related Pods status. Be noted that the Pod `mysql-with-sc-pvc-7c97d875f8-dwfkc` is running on `cka003`.
+检查相关 Pod 的状态。注意，Pod `mysql-with-sc-pvc-7c97d875f8-dwfkc` 运行在 `cka003` 上。
 
-```console
+```bash
 kubectl get pod -o wide -l app=mysql
 ```
 
-Result
+运行结果：
 
-```
+```console
 NAME                                 READY   STATUS    RESTARTS   AGE     IP              NODE     NOMINATED NODE   READINESS GATES
 mysql-774db46945-h82kk               1/1     Running   0          69m     10.244.112.26   cka002   <none>           <none>
 mysql-with-sc-pvc-7c97d875f8-wkvr9   1/1     Running   0          3m37s   10.244.102.27   cka003   <none>           <none>
 ```
 
-Let's check directory `/nfsdata/` on NFS server `cka002`.
+我们现在来查看 NFS 服务器 `cka002` 上的共享目录 `/nfsdata/`。
 
-```console
+```bash
 ll /nfsdata/
 ```
 
-Two folders were created. Same content of `/remote-nfs-dir/` on other nodes.
+NFS 服务器 `cka002` 上的共享目录 `/nfsdata/` 下有了2个子目录，与其他2个节点上的目录 `/remote-nfs-dir/` 下的内容是一致。
 
-```
+```bash
 drwxrwxrwx  6 systemd-coredump root 4096 Jul 23 23:35 dev/
 drwxr-xr-x  6 systemd-coredump root 4096 Jul 23 22:29 mysqldata/
 ```
 
-Namespace name is used as folder name under directory `/nfsdata/` and it is mounted to Pod.
-By default, namespace name will be used at mount point.
-If we want to use customized folder for that purpose, we need claim an annotation `nfs.io/storage-path`, e.g., below example.
+命名空间Namespace的名称作为目录名在 `/nfsdata/` 目录下用于挂载到 Pod 中。
+默认情况下，命名空间Namespace名称将用于挂载点。
+如果我们想要使用自定义的文件夹来代替，我们需要声明一个 `nfs.io/storage-path` 注释，例如下面的例子。
 
-Create PVC test-claim on Namespace `kube-system` and consume volume `nfs-client`.
+在命名空间 `kube-system` 上创建 PVC `test-claim`，并消费 `nfs-client` 卷。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -766,40 +776,44 @@ spec:
 EOF
 ```
 
-In above case, the PVC was created in `kube-system` Namespace, hence we can see directory `test-path` is under directory`kube-system` on node `cka002`.
+在上述情况下， PVC 创建在 `kube-system` 命名空间中，因此我们可以在节点 `cka002` 上的 `kube-system` 目录下看到 `test-path` 目录。
 
-Overall directory structure of folder `/nfsdata/` looks like below.
+执行下面的命令，来查看目录 `/nfsdata/` 的整体目录结构。
 
-```console
+```bash
 tree -L 1 /nfsdata/ 
 ```
 
-Result
+运行结果：
 
-```
+```console
 /nfsdata/
 ├── dev
 ├── kube-system
 └── mysqldata
 ```
 
-Please be noted that above rule is following `nfs-subdir-external-provisioner` implementation. It's may be different with other `provisioner`.
+注意：
 
-Detail about `nfs-subdir-external-provisioner` project is [here](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner)
+上述规则遵循了 `nfs-subdir-external-provisioner` 实现，可能与其他`provisioner`不同。
 
-## Configuration
+参考：
+
+ `nfs-subdir-external-provisioner` [项目](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner)的详细信息。
+
+## 配置Configuration
 
 ### ConfigMap
 
-Create ConfigMap `cm-nginx` to define content of `nginx.conf`.
+创建 ConfigMap `cm-nginx` 来配置文件 `nginx.conf`。
 
-```console
+```bash
 vi configmap.yaml
 ```
 
-Paste below content.
+把下面的内容粘贴到文件`nginx.conf`中。
 
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -842,15 +856,15 @@ data:
     }
 ```
 
-Apply the ConfigMap.
+应用文件`configmap.yaml`，创建ConfigMap。
 
-```console
+```bash
 kubectl apply -f configmap.yaml
 ```
 
-Create Pod `nginx-with-cm`.
+创建Pod `nginx-with-cm`。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
@@ -871,22 +885,23 @@ spec:
 EOF
 ```
 
-!!! Note
-    *By default to mount ConfigMap, Kubernetes will overwrite all content of the mount point. We can use `volumeMounts.subPath` to specify that only overwrite the file `nginx.conf` defined in `mountPath`.
-    * Is we use `volumeMounts.subPath` to mount a Container Volume, Kubernetes won't do hot update to reflect real-time update.
+提示：
 
-Verify if the `nginx.conf` mounted from outside is in the Container by comparing with above file.
+* 默认情况下，要挂载 ConfigMap，Kubernetes 会覆盖挂载点的所有内容。我们可以使用 `volumeMounts.subPath` 来指定只覆盖在 `mountPath` 中定义的 `nginx.conf` 文件。
+* 如果我们使用 `volumeMounts.subPath` 来挂载一个容器卷，Kubernetes 将不会进行热更新以反映实时更新。
 
-```console
+把从外部挂载的 `nginx.conf` 文件和上面的文件进行比较，以验证它是否已经被加载到容器中。
+
+```bash
 kubectl exec -it nginx-with-cm -- sh 
 cat /etc/nginx/nginx.conf
 ```
 
 ### Secret
 
-Encode password with base64  
+用base64方式编码密码。
 
-```console
+```bash
 echo -n admin | base64  
 YWRtaW4=
 
@@ -894,9 +909,9 @@ echo -n 123456 | base64
 MTIzNDU2
 ```
 
-Create Secret `mysecret`.
+创建Secret `mysecret`。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
@@ -908,9 +923,9 @@ data:
 EOF
 ```
 
-Using Volume to mount (injection) Secret to a Pod.
+使用卷将 Secret 挂载（注入，injection）到 Pod 中。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
@@ -934,23 +949,23 @@ spec:
 EOF
 ```
 
-Let's attach to the Pod `busybox-with-secret` to verify if two data elements of `mysecret` are successfully mounted to the path `/tmp/secret` within the Pod.
+让我们登录进入到Pod `busybox-with-secret`内部，以验证 `mysecret` 的两个数据元素（`username`和`password`）是否已成功挂载到Pod中的路径 `/tmp/secret`。
 
-```console
+```bash
 kubectl exec -it busybox-with-secret -- sh
 ```
 
-By executing below command, we can see two data elements are in the directory `/tmp/secret` as file type.
+执行下面的命令，我们可以看到`mysecret` 的两个数据元素（`username`和`password`）已经以文件形式存在于目录`/tmp/secret`下。
 
-```console
+```bash
 / # ls -l /tmp/secret/
 lrwxrwxrwx    1 root     root            15 Jul 23 16:30 password -> ..data/password
 lrwxrwxrwx    1 root     root            15 Jul 23 16:30 username -> ..data/username
 ```
 
-And we can get the content of each element, which are predefined before.
+而且我们可以看到这2个数据元素（`username`和`password`）的内容就是我们预先定义的。
 
-```console
+```bash
 / # cat /tmp/secret/username
 admin
 
@@ -958,18 +973,18 @@ admin
 123456
 ```
 
-### Additional Cases
+### 拓展案例
 
-#### Various way to create ConfigMap
+#### 多种方法创建ConfigMap
 
-ConfigMap can be created by file, directory, or value.
+我们可以通过文件、目录、或者值来创建ConfigMap。
 
-Let's create a ConfigMap `colors` includes:
+下面我们创建ConfigMap `colors`，包含：
 
-* Four files with four color names.
-* One file with favorite color name.
+* 四个文件，文件名是四个颜色。
+* 一个文件，文件名是最喜欢的颜色。
 
-```console
+```bash
 mkdir configmap
 cd configmap
 mkdir primary
@@ -982,9 +997,9 @@ echo "known as key" >> primary/black
 echo blue > favorite
 ```
 
-Final structure looks like below via command `tree configmap`.
+执行命令`tree configmap`，可以看到类似下面的文件目录结构。
 
-```
+```console
 configmap
 ├── favorite
 └── primary
@@ -994,22 +1009,24 @@ configmap
     └── yellow
 ```
 
-Create ConfigMap referring above files we created. Make sure we are now in the path `~/configmap`.
+创建一个 ConfigMap，引用上面我们创建的文件。确保我们现在在路径 `~/configmap` 下。
 
-```console
+```bash
 kubectl create configmap colors \
 --from-literal=text=black  \
 --from-file=./favorite  \
 --from-file=./primary/
 ```
 
-Check content of the ConfigMap `colors`.
+查看ConfigMap `colors`的内容。
 
-```console
+```bash
 kubectl get configmap colors -o yaml
 ```
 
-```
+运行结果：
+
+```bash
 apiVersion: v1
 data:
   black: |
@@ -1033,9 +1050,9 @@ metadata:
   uid: d5ab133f-5e4d-41d4-bc9e-2bbb22a872a1
 ```
 
-#### Set environment variable via ConfigMap
+#### 通过ConfigMap设定环境变量
 
-Here we will create a Pod `pod-configmap-env` and set the environment variable `ilike` and assign value of `favorite` from ConfigMap `colors`.
+继续上面的例子，现在我们准备创建一个名为`pod-configmap-env`的Pod，设置环境变量`ilike`并从ConfigMap `colors`中分配值`favorite`。
 
 ```console
 kubectl apply -f - << EOF
@@ -1056,22 +1073,22 @@ spec:
 EOF
 ```
 
-Attach to the Pod `pod-configmap-env`.
+连接并进入Pod `pod-configmap-env`内部。
 
-```console
+```bash
 kubectl exec -it pod-configmap-env -- bash
 ```
 
-Verify the value of env variable `ilike` is `blue`, which is the value of `favorite` of ConfigMap `colors`.
+验证环境变量 `ilike` 的值是 `blue`，这是 ConfigMap `colors` 的 `favorite` 值。
 
-```console
+```bash
 root@pod-configmap-env:/# echo $ilike
 blue
 ```
 
-We can also use all key-value of ConfigMap to set up environment variables of Pod.
+我们还可以使用 ConfigMap 的所有键值对来设置 Pod 的环境变量。
 
-```console
+```bash
 kubectl apply -f - << EOF
 apiVersion: v1
 kind: Pod
@@ -1087,15 +1104,15 @@ spec:
 EOF
 ```
 
-Attach to the Pod `pod-configmap-env-2`.
+连接并进入Pod `pod-configmap-env-2`内部。
 
-```console
+```bash
 kubectl exec -it pod-configmap-env-2 -- bash
 ```
 
-Verify the value of env variables based on key-values we defined in ConfigMap `colors`.
+验证环境变量的值是我们在ConfigMap `colors`所定义的键值对。
 
-```console
+```bash
 root@pod-configmap-env-2:/# echo $black
 k known as key
 root@pod-configmap-env-2:/# echo $cyan
