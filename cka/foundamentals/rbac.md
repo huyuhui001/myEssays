@@ -64,7 +64,7 @@ CA文件中存储了CA的公钥信息和其他相关的配置信息。
 tree /etc/kubernetes/pki
 ```
 
-运行结果，这是Kubernetes初始安装后的文件结构内容。
+运行结果，下面是Kubernetes初始安装后的文件结构的示例内容。
 
 ```console
 /etc/kubernetes/pki
@@ -138,8 +138,6 @@ EOF
 
 ### 创建证书签名请求 (CSR) 文件
 
-Stay in the directory `/etc/kubernetes/pki`.
-
 证书签名请求（CSR）资源用于请求由指定签名者签署的证书，此后可以在最终签署之前批准或拒绝请求。
 
 设置CSR的`CN`和`O`属性很重要。
@@ -199,45 +197,47 @@ ll -tr | grep cka-dev
 
 ### 创建kubeconfig文件
 
-Get the IP of Control Plane (e.g., `<cka001_ip>` here) to composite evn variable `APISERVER` (`https://<control_plane_ip>:<port>`).
+获取控制平面的IP地址（如：`<cka001_ip>`）来拼接出环境变量`APISERVER`的值，如：`https://<control_plane_ip>:<port>`。
 
-```console
+```bash
 kubectl get node -owide
 ```
 
-```
+运行结果：
+
+```bash
 NAME     STATUS   ROLES                  AGE   VERSION  OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
 cka001   Ready    control-plane,master   14h   v1.24.0  Ubuntu 20.04.4 LTS   5.4.0-122-generic   containerd://1.5.9
 cka002   Ready    <none>                 14h   v1.24.0  Ubuntu 20.04.4 LTS   5.4.0-122-generic   containerd://1.5.9
 cka003   Ready    <none>                 14h   v1.24.0  Ubuntu 20.04.4 LTS   5.4.0-122-generic   containerd://1.5.9
 ```
 
-Export env `APISERVER`.
+设定并输出环境变量`APISERVER`。
 
-```console
+```bash
 echo "export APISERVER=\"https://<cka001_ip>:6443\"" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-Verify the setting.
+验证环境变量`APISERVER`的值。
 
-```console
+```bash
 echo $APISERVER
 ```
 
-Output:
+运行结果：
 
-```
+```bash
 https://<cka001_ip>:6443
 ```
 
-1. Set up cluster
+1. 设置集群
 
-Stay in the directory `/etc/kubernetes/pki`.
+保持当前工作目录为 `/etc/kubernetes/pki`。
 
-Generate kubeconfig file.
+生成`kubeconfig`文件。
 
-```console
+```bash
 kubectl config set-cluster kubernetes \
   --certificate-authority=/etc/kubernetes/pki/ca.crt \
   --embed-certs=true \
@@ -245,15 +245,15 @@ kubectl config set-cluster kubernetes \
   --kubeconfig=cka-dev.kubeconfig
 ```
 
-Now we get the new config file `cka-dev.kubeconfig`
+现在我们生成了新的配置文件 `cka-dev.kubeconfig`。
 
-```console
+```bash
 ll -tr | grep cka-dev
 ```
 
-Output:
+输出结果：
 
-```
+```bash
 -rw-r--r-- 1 root root  222 Jul 24 08:49 cka-dev-csr.json
 -rw-r--r-- 1 root root 1281 Jul 24 09:14 cka-dev.pem
 -rw------- 1 root root 1675 Jul 24 09:14 cka-dev-key.pem
@@ -261,13 +261,15 @@ Output:
 -rw------- 1 root root 1671 Jul 24 09:16 cka-dev.kubeconfig
 ```
 
-Get content of file `cka-dev.kubeconfig`.
+读取配置文件`cka-dev.kubeconfig`的内容。
 
-```console
+```bash
 cat cka-dev.kubeconfig
 ```
 
-```
+输出的内容：
+
+```yaml
 apiVersion: v1
 clusters:
 - cluster:
@@ -281,13 +283,13 @@ preferences: {}
 users: null
 ```
 
-2. Set up user
+2. 配置用户
 
-In file `cka-dev.kubeconfig`, user info is null.
+在文件`cka-dev.kubeconfig`中，用户信息这部分是空的。
 
-Set up user `cka-dev`.
+下面我们配置一个用户`cka-dev`。
 
-```console
+```bash
 kubectl config set-credentials cka-dev \
   --client-certificate=/etc/kubernetes/pki/cka-dev.pem \
   --client-key=/etc/kubernetes/pki/cka-dev-key.pem \
@@ -295,13 +297,15 @@ kubectl config set-credentials cka-dev \
   --kubeconfig=cka-dev.kubeconfig
 ```
 
-Now file `cka-dev.kubeconfig` was updated and user information was added.
+现在，用户信息已经被添加到配置文件`cka-dev.kubeconfig`中了。
 
-```console
+```bash
 cat cka-dev.kubeconfig
 ```
 
-```
+输出结果：
+
+```yaml
 apiVersion: v1
 clusters:
 - cluster:
@@ -319,75 +323,81 @@ users:
     client-key-data: <your_key>
 ```
 
-Now we have a complete kubeconfig file `cka-dev.kubeconfig`.
-When we use it to get node information, receive error below because we did not set up current-context in kubeconfig file.
+至此我们得到了一个完整的配置文件`cka-dev.kubeconfig`。
+由于我们没有在 kubeconfig 文件中设置当前上下文，当我们使用它来获取节点信息时，会收到以下错误。
 
-```console
+```bash
 kubectl --kubeconfig=cka-dev.kubeconfig get nodes
 ```
 
-```
+运行结果：
+
+```console
 The connection to the server localhost:8080 was refused - did you specify the right host or port?
 ```
 
-Current contents is empty.
+当前上下文内容是空白。
 
-```console
+```bash
 kubectl --kubeconfig=cka-dev.kubeconfig config get-contexts
 ```
 
-```
+输出结果：
+
+```console
 CURRENT   NAME   CLUSTER   AUTHINFO   NAMESPACE
 ```
 
-3. Set up Context
+3. 配置上下文
 
-Set up context.
+配置上下文。
 
-```console
+```bash
 kubectl config set-context dev --cluster=kubernetes --user=cka-dev  --kubeconfig=cka-dev.kubeconfig
 ```
 
-Now we have context now but the `CURRENT` flag is empty.
+现在我们配置了上下文，但其中`CURRENT`仍然是空白。
 
-```console
+```bash
 kubectl --kubeconfig=cka-dev.kubeconfig config get-contexts
 ```
 
-Output:
+运行结果：
 
-```
+```console
 CURRENT   NAME   CLUSTER      AUTHINFO   NAMESPACE
           dev    kubernetes   cka-dev 
 ```
 
-Set up default context. The context will link clusters and users for multiple clusters environment and we can switch to different cluster.
+设置默认上下文。上下文将为多集群环境中的集群和用户链接，并且我们可以切换到不同的集群。
 
-```console
+```bash
 kubectl --kubeconfig=cka-dev.kubeconfig config use-context dev
 ```
 
-4. Verify
+4. 验证
 
-Now `CURRENT` is marked with `*`, that is, current-context is set up.
+现在`CURRENT`已经被标记为`*`了，这就说明当前上下文已经配置好了。
 
-```console
+```bash
 kubectl --kubeconfig=cka-dev.kubeconfig config get-contexts
 ```
 
-```
+运行结果：
+
+```console
 CURRENT   NAME   CLUSTER      AUTHINFO   NAMESPACE
 *         dev    kubernetes   cka-dev      
 ```
 
-Because user `cka-dev` does not have authorization in the cluster, we will receive `forbidden` error when we try to get information of Pods or Nodes.
+因为用户 `cka-dev` 在该集群中没有授权，所以当我们尝试获取 Pod 或 Node 的信息时，会收到“禁止访问（forbidden）”错误。
 
-```console
+```bash
 kubectl --kubeconfig=/etc/kubernetes/pki/cka-dev.kubeconfig get pod 
 kubectl --kubeconfig=/etc/kubernetes/pki/cka-dev.kubeconfig get node
 ```
 
-#### Merge kubeconfig files
+### Merge kubeconfig files
 
 Make a copy of your existing config
 
