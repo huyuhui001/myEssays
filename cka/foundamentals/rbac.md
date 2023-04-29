@@ -205,7 +205,7 @@ kubectl get node -owide
 
 运行结果：
 
-```bash
+```console
 NAME     STATUS   ROLES                  AGE   VERSION  OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
 cka001   Ready    control-plane,master   14h   v1.24.0  Ubuntu 20.04.4 LTS   5.4.0-122-generic   containerd://1.5.9
 cka002   Ready    <none>                 14h   v1.24.0  Ubuntu 20.04.4 LTS   5.4.0-122-generic   containerd://1.5.9
@@ -231,7 +231,7 @@ echo $APISERVER
 https://<cka001_ip>:6443
 ```
 
-1. 设置集群
+#### 设置集群
 
 保持当前工作目录为 `/etc/kubernetes/pki`。
 
@@ -253,7 +253,7 @@ ll -tr | grep cka-dev
 
 输出结果：
 
-```bash
+```console
 -rw-r--r-- 1 root root  222 Jul 24 08:49 cka-dev-csr.json
 -rw-r--r-- 1 root root 1281 Jul 24 09:14 cka-dev.pem
 -rw------- 1 root root 1675 Jul 24 09:14 cka-dev-key.pem
@@ -283,7 +283,7 @@ preferences: {}
 users: null
 ```
 
-2. 配置用户
+#### 配置用户
 
 在文件`cka-dev.kubeconfig`中，用户信息这部分是空的。
 
@@ -348,7 +348,7 @@ kubectl --kubeconfig=cka-dev.kubeconfig config get-contexts
 CURRENT   NAME   CLUSTER   AUTHINFO   NAMESPACE
 ```
 
-3. 配置上下文
+#### 配置上下文
 
 配置上下文。
 
@@ -375,7 +375,7 @@ CURRENT   NAME   CLUSTER      AUTHINFO   NAMESPACE
 kubectl --kubeconfig=cka-dev.kubeconfig config use-context dev
 ```
 
-4. 验证
+#### 验证
 
 现在`CURRENT`已经被标记为`*`了，这就说明当前上下文已经配置好了。
 
@@ -397,29 +397,29 @@ kubectl --kubeconfig=/etc/kubernetes/pki/cka-dev.kubeconfig get pod
 kubectl --kubeconfig=/etc/kubernetes/pki/cka-dev.kubeconfig get node
 ```
 
-### Merge kubeconfig files
+### 合并kubeconfig文件
 
-Make a copy of your existing config
+拷贝当前配置文件，作为备份。
 
-```console
+```bash
 cp ~/.kube/config ~/.kube/config.old 
 ```
 
-Merge the two config files together into a new config file `/tmp/config`.
+把两个配置文件合并成一个新的配置文件，并存放在`/tmp/config`。
 
-```console
+```bash
 KUBECONFIG=~/.kube/config:/etc/kubernetes/pki/cka-dev.kubeconfig  kubectl config view --flatten > /tmp/config
 ```
 
-Replace the old config with the new merged config
+用合并后的新配置文件替换老的配置文件。
 
-```console
+```bash
 mv /tmp/config ~/.kube/config
 ```
 
-Now the new `~/.kube/config` looks like below.
+新的配置文件`~/.kube/config`类似如下。
 
-```console
+```yaml
 apiVersion: v1
 clusters:
 - cluster:
@@ -449,80 +449,82 @@ users:
     client-key-data: <your_key>
 ```
 
-Verify contexts after kubeconfig merged.
+检查基于新的配置文件下的当前上下文。
 
-```console
+```bash
 kubectl config get-contexts
 ```
 
-Current context is the system default `kubernetes-admin@kubernetes`.
+当前上下文是系统默认配置`kubernetes-admin@kubernetes`。
 
-```
+```console
 CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPACE
           dev                           kubernetes   cka-dev            
 *         kubernetes-admin@kubernetes   kubernetes   kubernetes-admin   dev
 ```
 
-### Namespaces & Contexts
+### 命名空间和上下文
 
-Get list of Namespace with Label information.
+查询当前命名空间namespace列表和对应标签label的信息。
 
-```console
+```bash
 kubectl get ns --show-labels
 ```
 
-Create Namespace `cka`.
+创建namespace `cka`。
 
-```console
+```bash
 kubectl create namespace cka
 ```
 
-Use below command to set a context with new update, e.g, update default namespace, etc..
+使用以下命令更新上下文信息，例如，更新默认命名空间等。
 
-```console
+```bash
 kubectl config set-context <context name> --cluster=<cluster name> --namespace=<namespace name> --user=<user name> 
 ```
 
-Let's set default namespace to each context.
+下面针对每个上下文context设定默认的namespace。
 
-```console
+```bash
 kubectl config set-context kubernetes-admin@kubernetes --cluster=kubernetes --namespace=default --user=kubernetes-admin
 kubectl config set-context dev --cluster=kubernetes --namespace=cka --user=cka-dev
 ```
 
-Let's check current context information.
+检查当前上下文context的信息。
 
-```console
+```bash
 kubectl config get-contexts
 ```
 
-Output:
+输出结果：
 
-```
+```console
 CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPACE
           dev                           kubernetes   cka-dev            cka
 *         kubernetes-admin@kubernetes   kubernetes   kubernetes-admin   dev
 ```
 
-To switch to a new context, use below command.
+通过下面的命令，可以切换到新的context。
 
-```console
+```bash
 kubectl config use-contexts <context name>
 ```
 
-For example.
+例如：
 
-```console
+```bash
 kubectl config use-context dev
 ```
 
-Verify if it's changed as expected.
+检查上面的变更是否生效。
 
-```console
+```bash
 kubectl config get-contexts
 ```
 
-```
+运行结果；
+
+```console
 CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPACE
 *         dev            kubernetes   cka-dev            cka
           kubernetes-admin@kubernetes   kubernetes   kubernetes-admin   dev
@@ -531,23 +533,25 @@ CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPAC
 Be noted, four users beginning with `cka-dev` created don't have any authorizations, e.g., access namespaces, get pods, etc..
 Referring RBAC to grant their authorizations.
 
-### Role & RoleBinding
+注意：前面创建的以`cka-dev`开头的用户实际没有任何权限，例如访问命名空间、获取 pod 等，下面将通过 RBAC 授予他们授权。
 
-Switch to context `kubernetes-admin@kubernetes`.
+### 角色Role和角色绑定RoleBinding
 
-```console
+将当前工作上下文切换到 `kubernetes-admin@kubernetes`。
+
+```bash
 kubectl config use-context kubernetes-admin@kubernetes
 ```
 
-Use `kubectl create role` command  with option `--dry-run=client` and `-o yaml` to generate yaml template for customizing.
+使用带有选项`--dry-run=client`和`-o yaml`的`kubectl create role`命令，生成创建角色role的 yaml 模板。
 
-```console
+```bash
 kubectl create role admin-dev --resource=pods --verb=get --verb=list --verb=watch --dry-run=client -o yaml
 ```
 
-Create role `admin-dev` on namespace `cka`.
+在namespace `cka`上创建角色role `admin-dev`。
 
-```console
+```bash
 kubectl apply -f - << EOF
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -566,15 +570,15 @@ rules:
 EOF
 ```
 
-Use `kubectl create rolebinding` command  with option `--dry-run=client` and `-o yaml` to generate yaml template for customizing.
+使用带有选项`--dry-run=client`和`-o yaml`的`kubectl create rolebinding`命令，生成创建角色绑定rolebinding的 yaml 模板。
 
-```console
+```bash
 kubectl create rolebinding admin --role=admin-dev --user=cka-dev --dry-run=client -o yaml
 ```
 
-Create rolebinding `admin` on namespace `cka`.
+在namespace `cka`上创建一个角色绑定rolebinding `admin`。
 
-```console
+```bash
 kubectl apply -f - << EOF
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -592,49 +596,49 @@ subjects:
 EOF
 ```
 
-Verify authorzation of user `cka-dev` on Namespace `cka`.
+验证namespace `cka`上的用户`cka-dev`的权限。
 
-Switch to context `dev`.
+切换到上下文`dev`。
 
-```console
+```bash
 kubectl config use-context dev
 ```
 
-Get Pods status in Namespace `cka`. Success!
+查询namespace `cka`上pod的状态，成功！
 
-```console
+```bash
 kubectl get pod -n cka
 ```
 
-Get Pods status in Namespace `kube-system`. Failed, because the authorzation is only for Namespace `cka`.
+查询namespace `kube-system`上pod的状态，失败！因为前面添加的权限仅限于namespace `cka`。
 
-```console
+```bash
 kubectl get pod -n kube-system
 ```
 
-Get Nodes status. Failed, because the role we defined is only for Pod resource.
+查询节点node的状态，失败！因为在角色role里面我们只定义了pod这一种资源。
 
-```console
+```bash
 kubectl get node
 ```
 
-Create a Pod in Namespace `dev`. Failed because we only have `get`,`watch`,`list` for Pod, no `create` authorization.
+在namespace `dev`上创建一个pod，失败！因为我们在只有对pod的`get`,`watch`,`list`三种操作权限，没有`create` 权限。
 
-```console
+```bash
 kubectl run nginx --image=nginx -n cka
 ```
 
-### ClusterRole & ClusterRoleBinding
+### 集群角色ClusterRole和集群角色绑定ClusterRoleBinding
 
-Switch to context `kubernetes-admin@kubernetes`.
+切换到上下文`kubernetes-admin@kubernetes`。
 
-```console
+```bash
 kubectl config use-context kubernetes-admin@kubernetes
 ```
 
-Create a ClusterRole `nodes-admin` with authorization `get`,`watch`,`list` for `nodes` resource.
+创建一个名为 `nodes-admin` 的 ClusterRole，它授予 `get`、`watch`、`list` 对 `nodes` 资源的授权。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -652,9 +656,9 @@ rules:
 EOF
 ```
 
-Bind ClusterRole `nodes-admin` to user `cka-dev`.
+将 ClusterRole `nodes-admin` 绑定到用户 `cka-dev`。
 
-```console
+```bash
 kubectl apply -f - << EOF
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -671,53 +675,50 @@ roleRef:
 EOF
 ```
 
-Verify Authorization
+切换到上下文到 `dev`。验证权限。
 
-Switch to context `dev`.
-
-```console
+```bash
 kubectl config use-context dev
 ```
 
-Get node information. Success!
+查询节点node信息，成功！
 
-```console
+```bash
 kubectl get node
 ```
 
-Switch to system context.
+切换到系统的上下文`kubernetes-admin@kubernetes`。
 
-```console
+```bash
 kubectl config use-context kubernetes-admin@kubernetes 
 ```
 
-### ClusterRole and ServiceAccount
+### 集群角色ClusterRole和ServiceAccount
 
-!!! Scenario
-    *Create a ClusterRole, which is authorized to create Deployment, StatefulSet, DaemonSet.
-    * Bind the ClusterRole to a ServiceAccount.
+演示场景：
+
+* 创建一个 ClusterRole，该 ClusterRole 有权创建 Deployment、StatefulSet 和 DaemonSet。
+* 将该 ClusterRole 绑定到一个 ServiceAccount 上。
 
 Demo:
 
-```console
+```bash
 kubectl create namespace my-namespace
-
 kubectl -n my-namespace create serviceaccount my-sa
-
 kubectl create clusterrole my-clusterrole --verb=create --resource=deployments,statefulsets,daemonsets
-
 kubectl -n my-namespace create rolebinding my-clusterrolebinding --clusterrole=my-clusterrole --serviceaccount=my-namespace:my-sa
 ```
 
-Clean up.
+删除演示中创建的临时资源。
 
-```console
+```bash
 kubectl delete namespace my-namespace 
 kubectl delete clusterrole my-clusterrole
 ```
 
-!!! Hints
-    1. A RoleBinding may reference any Role in the same namespace.
-    2. A RoleBinding can reference a ClusterRole and bind that ClusterRole to the namespace of the RoleBinding.
-    3. If you want to bind a ClusterRole to all the namespaces in your cluster, you use a ClusterRoleBinding.
-    4. Use RoleBinding to bind ClusterRole is to reuse the ClusterRole for namespaced resources, avoid duplicated namespaced roles for same authorization.
+建议：
+
+1. 一个RoleBinding可以引用同一命名空间中的任何Role。
+2. 一个RoleBinding可以引用ClusterRole并将其绑定到RoleBinding所在的命名空间。
+3. 如果要将ClusterRole绑定到集群中的所有命名空间，则使用ClusterRoleBinding。
+4. 使用RoleBinding绑定ClusterRole是为了重用ClusterRole以授权命名空间资源，避免为相同授权创建重复的命名空间角色。
