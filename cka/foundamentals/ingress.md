@@ -180,50 +180,48 @@ EOF
 * Directory `/opt/html-2/` is on `cka002`
 * Directory `/opt/html-1/` is on `cka002`
 
-Access to two Pod via curl. We get `403 Forbidden` error.
+通过`curl`命令来访问这2个pod，收到`403 Forbidden`错误。
 
-```console
+```bash
 curl 10.244.102.13
 curl 10.244.112.19
 ```
 
-Log onto node `cka002`, create `index.html` file in path `/opt/html-2/` with below command.
+登录到节点`cka002`，执行下面命令，在`/opt/html-2/`路径下创建文件`index.html`。
 
-```console
+```bash
 cat <<EOF | sudo tee /opt/html-2/index.html
 This is test 2 !!
 EOF
 ```
 
-Log onto node `cka003`, create `index.html` file in path `/opt/html-1/` with below command.
+登录到节点`cka003`，执行下面命令，在`/opt/html-1/`路径下创建文件`index.html`。
 
-```console
+```bash
 cat <<EOF | sudo tee /opt/html-1/index.html
 This is test 1 !!
 EOF
 ```
 
-Check Pods status again by executing `kubectl get pod -o wide`.
+执行命令`kubectl get pod -o wide`，再次检查2个pod的状态。
 
-Now access to two Pod via `curl` is reachable.
-
-```console
+```bash
 curl 10.244.102.13
 curl 10.244.112.19
 ```
 
-We get correct information now.
+现在可以通过`curl`命令来访问这2个pod了，收到了正确的回复信息。
 
-```
+```console
 This is test 1 !!
 This is test 2 !!
 ```
 
-## Create Service
+## 创建Service
 
-Create Service `nginx-app-1` and `nginx-app-2` and map to related deployment `nginx-app-1` and `nginx-app-2`.
+创建 `nginx-app-1` 和 `nginx-app-2` 这2个 Service，并将它们分别映射到相关的 Deployment `nginx-app-1` 和 `nginx-app-2`。
 
-```console
+```bash
 kubectl apply -f - << EOF
 apiVersion: v1
 kind: Service
@@ -251,32 +249,31 @@ spec:
 EOF
 ```
 
-Check the status by executing below comamnd.
+检查刚刚创建的service的状态。
 
-```console
+```bash
 kubectl get svc -o wide
 ```
 
-Access to two Service via `curl`.
+尝试通过`curl`命令来访问刚刚创建的service。
 
-```console
+```bash
 curl 11.244.165.64
 curl 11.244.222.177
 ```
 
-We get correct information.
+收到了正确的信息，说明访问成功。
 
-```
+```console
 This is test 1 !!
 This is test 2 !!
 ```
 
-## Create Ingress
+## 创建Ingress
 
-Create Ingress resource `nginx-app` and map to two Services `nginx-app-1` and `nginx-app-1` we created.
-Change the namespace to `default`.
+创建 Ingress 资源 `nginx-app`，将其映射到我们创建的两个 Service `nginx-app-1` 和 `nginx-app-2`，并将其所在的 namespace 改为 `default`。
 
-```console
+```bash
 kubectl apply -f - << EOF
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -309,63 +306,60 @@ spec:
 EOF
 ```
 
-Get Ingress status by executing command below.
+查看所创建的Ingress资源的状态。
 
-```console
+```bash
 kubectl get ingress
 ```
 
-## Test Accessiblity
+## 可访问性测试
 
-By executing command below, we know Ingress Controllers are running on node `cka003`.
+执行以下命令，来确定 Ingress 控制器正在节点 `cka003` 上运行。
 
-```console
+```bash
 kubectl get pod -n ingress-nginx -o wide
 ```
 
-Update `/etc/hosts` file in current node.
+在当前节点上更新 `/etc/hosts` 文件。
+将节点`cka003`的IP地址与两个主机名`app1.com`和`app1.com`进行映射，这些主机名表示Services`nginx-app-1`和`nginx-app-2`。
+Ingress Controllers正在节点`cka003`上运行。
 
-Add mapping between node `cka003` IP and two host names `app1.com` and `app1.com` which present Services `nginx-app-1` and `nginx-app-2`.
-
-Ingress Controllers are running on node `cka003`
-
-```console
+```bash
 cat <<EOF | sudo tee -a /etc/hosts
 <cka003_ip>  app1.com
 <cka003_ip>  app2.com
 EOF
 ```
 
-Get IP address or FQDN with the following command:
+执行以下命令，可以得到 IP 地址或 FQDN。
 
-```console
+```bash
 kubectl get service ingress-nginx-controller --namespace=ingress-nginx
 ```
 
-It will be the `EXTERNAL-IP` field. If that field shows `<pending>` like below, this means that the Kubernetes cluster wasn't able to provision the load balancer (generally, this is because it doesn't support services of type LoadBalancer).
+在输出结果中可以看到 `EXTERNAL-IP` 字段。如果该字段像下面一样显示为 `<pending>`，这意味着 Kubernetes 集群无法提供负载均衡器（通常是因为它不支持 `LoadBalancer` 类型的服务）。
 
-As there is no Aliyun ELB configured, use below two options to make the external IP in place.
+由于没有配置阿里云 ELB，因此有以下两个选项可以解决这个问题。
 
-> Option 1: manually add node ip to ingress controller, which the controller pod is running on.
->  
-> Execute command `kubectl get pod -n ingress-nginx -o wide` to see that ingress controller pod is running on node `cka003`.
->  
-> Manually patch the external ip of `cak003` to the `EXTERNAL-IP` field.
->
->  ```console
->  kubectl patch svc ingress-nginx-controller \
->    --namespace=ingress-nginx \
->    -p '{"spec": {"type": "LoadBalancer", "externalIPs":["<cka003_ip>"]}}'
->  ```
->  
-> Option 2: change ingress controller from `LoadBalancer` to `NodePort`.
+选项 1：手动将节点 IP 添加到运行 ingress 控制器的节点上。
 
-Two files `index.html` are in two Pods, the web services are exposed to outside via node IP.
-The `ingress-nginx-controller` plays a central entry point for outside access, and provide two ports for different backend services from Pods.
+执行命令 `kubectl get pod -n ingress-nginx -o wide` 来查看 ingress 控制器 pod 运行在哪个节点上。
 
-Send HTTP request to two hosts defined in Ingress.
+手动将 `cka003` 的外部 IP 补丁到 `EXTERNAL-IP` 字段。
 
-```console
+```bash
+kubectl patch svc ingress-nginx-controller \
+ --namespace=ingress-nginx \
+ -p '{"spec": {"type": "LoadBalancer", "externalIPs":["<cka003_ip>"]}}'
+```
+
+选项 2：将 ingress 控制器从 `LoadBalancer` 类型更改为 `NodePort` 类型。
+
+两个 Pod 中各有一个 `index.html` 文件，Web 服务通过节点 IP 对外暴露。`ingress-nginx-controller` 作为中心入口点，为来自 Pod 的不同后端服务提供了两个端口。
+
+发送HTTP请求到在Ingress中定义的2个主机节点。
+
+```bash
 curl http://app1.com:30011
 curl http://app2.com:30011
 
@@ -373,16 +367,16 @@ curl app1.com:30011
 curl app2.com:30011
 ```
 
-Get below successful information.
+可以得到下面的信息，说明访问成功。
 
-```
+```console
 This is test 1 !!
 This is test 2 !!
 ```
 
-Clean up.
+删除上面演示中创建的临时资源。
 
-```
+```bash
 kubectl delete ingress ingress-nginx-app
 kubectl delete service nginx-app-1
 kubectl delete service nginx-app-2
