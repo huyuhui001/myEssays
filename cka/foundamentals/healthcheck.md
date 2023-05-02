@@ -1,14 +1,16 @@
-# Health Check
+# CKA自学笔记26:健康检查
 
-## Status of Pod and Container
+## Pod和Container的状态
 
-!!! Scenario
-    Create a pod with two containers.
+演示场景：
 
-Demo:
+* 创建一个有2个容器的pod。
 
-Create a Pod `multi-pods` with two containers `nginx` and `busybox`. 
-```console
+演示：
+
+创建一个包含两个容器 `nginx` 和 `busybox` 的 Pod，命名为 `multi-pods`。
+
+```bash
 kubectl apply -f - << EOF
 apiVersion: v1
 kind: Pod
@@ -27,17 +29,22 @@ spec:
 EOF
 ```
 
-Minotor the status with option `--watch`. The status of Pod was changed from `ContainerCreating` to `NotReady` to `CrashLoopBackOff`.
-```console
+执行下面命令来监控状态，使用选项 `--watch`。
+注意，pod的状态已经从`ContainerCreating` 变为 `NotReady`，再变为 `CrashLoopBackOff`。
+
+```bash
 kubectl get pod multi-pods --watch
 ```
 
-Get details of the Pod `multi-pods`, focus on Container's state under segment `Containers` and Conditions of Pod under segment `Conditions`.
-```console
+获取 Pod `multi-pods` 的详细信息，关注 `Containers` 部分下的容器状态和 `Conditions` 部分下的 Pod 状态。
+
+```bash
 kubectl describe pod multi-pods
 ```
-Result
-```
+
+运行结果（部分）：
+
+```yaml
 ......
 Containers:
   nginx:
@@ -62,21 +69,19 @@ Conditions:
 ...... 
 ```
 
-
-
-
-
 ## LivenessProbe
 
-!!! Scenario
-    Create pod with `livenessProbe` check.
+演示场景：
 
-Detail description of the demo can be found on the [Kubernetes document](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/).
+* 创建一个pod，内含`livenessProbe`检查。
 
-Demo:
+演示的详细说明可以查询[Kubernetes document](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)。
 
-Create a yaml file `liveness.yaml` with `livenessProbe` setting and apply it.
-```console
+演示：
+
+创建yaml文件`liveness.yaml`，并包含`livenessProbe`配置，并应用之。
+
+```bash
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
@@ -103,16 +108,17 @@ EOF
 
 ```
 
-Let's see what happened in the Pod `liveness-exec`.
+让我们来看看 Pod `liveness-exec` 中发生了什么。
 
-* Create a folder `/tmp/healthy`.
-* Execute the the command `cat /tmp/healthy` and return successful code.
-* After `35` seconds, execute command `rm -rf /tmp/healthy` to delete the folder. The probe `livenessProbe` detects the failure and return error message.
-* The kubelet kills the container and restarts it. The folder is created again `touch /tmp/healthy`.
+* 创建一个名为 `/tmp/healthy` 的文件夹。
+* 执行命令 `cat /tmp/healthy` 并返回成功的代码。
+* `35` 秒后，执行命令 `rm -rf /tmp/healthy` 来删除文件夹。探针 `livenessProbe` 检测到失败并返回错误消息。
+* kubelet 终止容器并重新启动它。文件夹再次被创建 `touch /tmp/healthy`。
 
-By command `kubectl describe pod liveness-exec`, wec can see below event message. 
-Once failure detected, image will be pulled again and the folder `/tmp/healthy` is in place again.
-```
+通过命令 `kubectl describe pod liveness-exec`，我们可以看到以下事件消息。
+一旦检测到失败，镜像将会再次被拉取，并且文件夹 `/tmp/healthy` 会再次存在。
+
+```console
 ......
 Events:
   Type     Reason     Age                From               Message
@@ -126,21 +132,19 @@ Events:
   Normal   Killing    12s                kubelet            Container liveness failed liveness probe, will be restarted
 ```
 
-
-
-
 ## ReadinessProbe
 
-!!! Scenario
-    Create a pod with `readinessProbe` check.
+演示场景：
 
-Demo: 
+* 创建一个pod，内含 `readinessProbe` 检查。
 
-Readiness probes are configured similarly to liveness probes. 
-The only difference is that you use the readinessProbe field instead of the livenessProbe field.
+演示：
 
-Create a yaml file `readiness.yaml` with `readinessProbe` setting and apply it.
-```console
+Readiness探针的配置与liveness探针类似，唯一的区别是使用`readinessProbe`字段而非`livenessProbe`字段。
+
+创建一个名为`readiness.yaml`的yaml文件并应用其中的`readinessProbe`配置。
+
+```bash
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
@@ -165,19 +169,22 @@ EOF
 
 ```
 
-The ready status of the Pod is 0/1, that is, the Pod is not up successfully.
-```console
+pod的Ready状态现在是`0/1`，即，pod并未成功创建。
+
+```bash
 kubectl get pod readiness --watch
 ```
-Result
-```
+
+运行结果：
+
+```console
 NAME        READY   STATUS    RESTARTS   AGE
 readiness   0/1     Running   0          15s
 ```
 
-Execute command `kubectl describe pod readiness` to check status of Pod. 
-We see failure message `Readiness probe failed`.
-```
+执行命令 `kubectl describe pod readiness` 来检查pod的状态，我们可以看到报错信息`Readiness probe failed`。
+
+```console
 ......
 Events:
   Type     Reason     Age               From               Message
@@ -190,20 +197,13 @@ Events:
   Warning  Unhealthy  1s (x7 over 31s)  kubelet            Readiness probe failed: cat: can't open '/tmp/healthy': No such file or directory
 ```
 
+Liveness探针不会等待readiness探针成功后才执行。
+如果我们想要在执行Liveness探针之前等待一段时间，可以使用`initialDelaySeconds`或`startupProbe`。
 
-Liveness probes do not wait for readiness probes to succeed. 
-If we want to wait before executing a liveness probe you should use initialDelaySeconds or a startupProbe.
+删除演示中创建的临时资源。
 
-
-Clean up.
-```console
+```bash
 kubectl delete pod liveness-exec
 kubectl delete pod multi-pods 
 kubectl delete pod readiness
 ```
-
-
-
-
-
-
