@@ -1,42 +1,47 @@
-# Case Study: Install Calico
+# 主题讨论:安装Calico
 
-!!! Scenario
-    Install Calico
+演示场景：安装Calico
 
-    * Calico Datastore
-    * Configure IP Pools
-    * Install CNI plugin
-    * Install Typha
-    * Install calico/node
-    * Test networking
+这是一个关于如何配置和测试Calico网络的简要步骤：
 
+* Calico数据库（Datastore）：Calico支持使用etcd或Kubernetes API server作为数据存储后端。选择并部署其中一个数据存储后端。
+* 配置IP池：为了为Kubernetes集群中的节点分配IP地址，需要配置IP池。可以通过Calico自定义资源（CRD）来定义IP池。
+* 安装CNI插件：CNI插件负责在节点上创建和删除网络接口，它们是应用程序容器和物理网络之间的桥梁。需要在Kubernetes节点上安装Calico CNI插件。
+* 安装Typha：Typha是Calico中央控制平面的一个组件。它从Kubernetes API server中获取网络策略和其他信息，并将它们分发给所有节点上的calico/node。
+* 安装calico/node：calico/node是一个运行在Kubernetes节点上的守护进程。它管理节点上的网络接口，并为容器分配和释放IP地址。
+* 测试网络：在完成上述步骤后，可以通过在Pod之间进行网络通信来测试Calico网络是否正常工作。可以创建两个运行在不同节点上的Pod，并尝试从一个Pod ping另一个Pod。如果ping成功，则表示Calico网络已成功配置和运行。
 
-## The Calico Datastore
+## Calico数据库
 
-In order to use Kubernetes as the Calico datastore, we need to define the custom resources Calico uses.
+为了将Kubernetes用作Calico数据存储库，我们需要定义Calico使用的自定义资源。
 
-Download and examine the list of Calico custom resource definitions, and open it in a file editor.
-```console
+下载并检查Calico自定义资源定义列表，并在文件编辑器中打开它。
+
+```bash
 wget https://projectcalico.docs.tigera.io/manifests/crds.yaml
 ```
 
-Create the custom resource definitions in Kubernetes.
-```console
+在 Kubernetes 中创建 Calico 的自定义资源。
+
+```bash
 kubectl apply -f crds.yaml
 ```
 
-Install `calicoctl`. To interact directly with the Calico datastore, use the `calicoctl` client tool.
+安装`calicoctl`。
 
-Download the calicoctl binary to a Linux host with access to Kubernetes. 
-The latest release of calicoctl can be found in the [git page](https://github.com/projectcalico/calico/releases) and replace below `v3.23.2` by actual release number.
-```console
+下载 `calicoctl` 二进制文件到一个可以访问 Kubernetes 的 Linux 主机上，以直接与 Calico 数据存储交互。
+
+最新版的calicoctl可以通过[git page](https://github.com/projectcalico/calico/releases)进行下载，需要用实际版本号替换下面的`v3.23.2`的版本号。
+
+```bash
 wget https://github.com/projectcalico/calico/releases/download/v3.23.3/calicoctl-linux-amd64
 chmod +x calicoctl-linux-amd64
 sudo cp calicoctl-linux-amd64 /usr/local/bin/calicoctl
 ```
 
-Configure calicoctl to access Kubernetes
-```console
+配置 `calicoctl` 以访问 Kubernetes。
+
+```bash
 echo "export KUBECONFIG=/root/.kube/config" >> ~/.bashrc
 echo "export DATASTORE_TYPE=kubernetes" >> ~/.bashrc
 
@@ -44,55 +49,62 @@ echo $KUBECONFIG
 echo $DATASTORE_TYPE
 ```
 
-Verify `calicoctl` can reach the datastore by running：
-```console
+执行下面的命令，验证`calicoctl`能够访问数据库。
+
+```bash
 calicoctl get nodes -o wide
 ```
-Output similar to below:
-```
+
+运行结果类似如下：
+
+```console
 NAME     ASN   IPV4   IPV6   
 cka001                       
 cka002                       
 cka003  
 ```
 
-Nodes are backed by the Kubernetes node object, so we should see names that match `kubectl get nodes`.
-```console
+节点是由 Kubernetes 节点对象支持的，因此我们应该看到与 `kubectl get nodes` 匹配的名称。
+
+```bash
 kubectl get nodes -o wide
 ```
-```
+
+运行结果：
+
+```console
 NAME     STATUS     ROLES                  AGE   VERSION   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
 cka001   NotReady   control-plane,master   23m   v1.24.0   Ubuntu 20.04.4 LTS   5.4.0-113-generic   containerd://1.5.9
 cka002   NotReady   <none>                 22m   v1.24.0   Ubuntu 20.04.4 LTS   5.4.0-113-generic   containerd://1.5.9
 cka003   NotReady   <none>                 21m   v1.24.0   Ubuntu 20.04.4 LTS   5.4.0-113-generic   containerd://1.5.9
 ```
 
+## 配置IP池
 
+一个工作负载（workload）是容器或虚拟机，基于Calico的虚拟网络。
+在Kubernetes中，工作负载是Pod。一个工作负载端点（endpoint）是工作负载用来连接Calico网络的虚拟网络接口。
 
-## Configure IP Pools
+IP池是Calico为工作负载端点使用的IP地址范围。
 
-A workload is a container or VM that Calico handles the virtual networking for. 
-In Kubernetes, workloads are pods. 
-A workload endpoint is the virtual network interface a workload uses to connect to the Calico network.
+获取集群中当前的IP池。目前，在刚刚安装完之后，它是空的。
 
-IP pools are ranges of IP addresses that Calico uses for workload endpoints.
-
-Get current IP pools in the cluster. So far, it's empty after fresh installation.
-```console
+```bash
 calicoctl get ippools
 ```
-```
+
+运行结果：
+
+```console
 NAME   CIDR   SELECTOR 
 ```
 
-The Pod CIDR is `10.244.0.0/16` we specified via `kubeadm init`.
+我们通过 `kubeadm init` 命令指定了 Pod CIDR 为 `10.244.0.0/16`。
 
-Let's create two IP pools for use in the cluster. Each pool can not have any overlaps.
+现在，我们为集群创建两个 IP 池（IP pool），每个池之间不能重叠。
 
-* ipv4-ippool-1: `10.244.0.0/18`
-* ipv4-ippool-2: `10.244.192.0/19`
+创建IP池`ipv4-ippool-1`: `10.244.0.0/18`
 
-```console
+```bash
 calicoctl apply -f - <<EOF
 apiVersion: projectcalico.org/v3
 kind: IPPool
@@ -106,7 +118,10 @@ spec:
   nodeSelector: all()
 EOF
 ```
-```console
+
+创建IP池`ipv4-ippool-2`: `10.244.192.0/19`
+
+```bash
 calicoctl apply -f - <<EOF
 apiVersion: projectcalico.org/v3
 kind: IPPool
@@ -121,33 +136,41 @@ spec:
 EOF
 ```
 
-IP pool now looks like below.
-```console
+查询所创建的IP池。
+
+```bash
 calicoctl get ippools -o wide
 ```
-```
+
+运行结果：
+
+```console
 NAME            CIDR              NAT    IPIPMODE   VXLANMODE   DISABLED   DISABLEBGPEXPORT   SELECTOR   
 ipv4-ippool-1   10.244.0.0/18     true   Never      Never       false      false              all()      
 ipv4-ippool-2   10.244.192.0/19   true   Never      Never       true       false              all()     
 ```
 
+## 安装CNI插件
 
-## Install CNI plugin
+* 为插件创建Kubernetes用户账户。
 
-* Provision Kubernetes user account for the plugin.
+Kubernetes使用容器网络接口（CNI）与像Calico这样的网络提供者进行交互。
 
-Kubernetes uses the Container Network Interface (CNI) to interact with networking providers like Calico. 
-The Calico binary that presents this API to Kubernetes is called the CNI plugin and must be installed on every node in the Kubernetes cluster.
+以API形式呈现的，供Kubernetes使用的Calico二进制文件，称为CNI插件，必须安装在Kubernetes集群中的每个节点上。
 
-The CNI plugin interacts with the Kubernetes API server while creating pods, both to obtain additional information and to update the datastore with information about the pod.
+CNI插件在创建Pod时与Kubernetes API服务器交互，既要获取附加信息，又要使用有关Pod的信息更新数据存储。
 
-On the Kubernetes *master* node, create a key for the CNI plugin to authenticate with and certificate signing request.
+在Kubernetes *master*节点上，为CNI插件创建一个密钥以进行身份验证并签名证书请求。
 
-Change to directory `/etc/kubernetes/pki/`.
-```console
+切换到目录 `/etc/kubernetes/pki/`。
+
+```bash
 cd /etc/kubernetes/pki/
 ```
-```
+
+生成证书。
+
+```bash
 openssl req -newkey rsa:4096 \
   -keyout cni.key \
   -nodes \
@@ -155,8 +178,9 @@ openssl req -newkey rsa:4096 \
   -subj "/CN=calico-cni"
 ```
 
-We will sign this certificate using the main Kubernetes CA.
-```console
+使用主Kubernetes CA对此证书进行签名。
+
+```bash
 sudo openssl x509 -req -in cni.csr \
   -CA /etc/kubernetes/pki/ca.crt \
   -CAkey /etc/kubernetes/pki/ca.key \
@@ -164,21 +188,25 @@ sudo openssl x509 -req -in cni.csr \
   -out cni.crt \
   -days 3650
 ```
-Output looks like below. User is `calico-cni`.
-```
+
+输出结果类似如下，用户是 `calico-cni`。
+
+```console
 Signature ok
 subject=CN = calico-cni
 Getting CA Private Key
 ```
-```console
+
+赋予当前操作系统用户对文件`cni.crt`的操作权限。
+
+```bash
 sudo chown $(id -u):$(id -g) cni.crt
 ```
 
-Next, we create a kubeconfig file for the CNI plugin to use to access Kubernetes. 
-Copy this `cni.kubeconfig` file to every node in the cluster.
+保持在`/etc/kubernetes/pki/`目录中，接下来我们将为CNI插件创建一个kubeconfig文件，用于访问Kubernetes。
+将此`cni.kubeconfig`文件复制到集群中的每个节点。
 
-Stay in directory `/etc/kubernetes/pki/`.
-```console
+```bash
 APISERVER=$(kubectl config view -o jsonpath='{.clusters[0].cluster.server}')
 
 echo $APISERVER
@@ -203,27 +231,32 @@ kubectl config set-context cni@kubernetes \
 kubectl config use-context cni@kubernetes --kubeconfig=cni.kubeconfig
 ```
 
-The context for CNI looks like below.
-```console
+查询CNI上下文看起来类似下面的输出。
+
+```bash
 kubectl config get-contexts --kubeconfig=cni.kubeconfig
 ```
-```
+
+输出结果：
+
+```console
 CURRENT   NAME             CLUSTER      AUTHINFO     NAMESPACE
 *         cni@kubernetes   kubernetes   calico-cni 
 ```
 
+* 配置RBAC（ Role-Based Access Control）
 
+为 CNI 插件的 Kubernetes 用户帐户配置 RBAC 角色和角色绑定。这将授予此用户帐户所需的 Kubernetes API 访问权限。
 
-* Provision RBAC
+切换到home路径，作为当前工作目录。
 
-Change to home directory
-```console
+```bash
 cd ~
 ```
 
-Define a cluster role the CNI plugin will use to access Kubernetes.
+定义一个集群角色，CNI插件将使用该角色访问Kubernetes。
 
-```console
+```bash
 kubectl apply -f - <<EOF
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -267,27 +300,28 @@ rules:
 EOF
 ```
 
-Bind the cluster role to the `calico-cni` account.
-```console
+把上面创建的集群角色绑定到 `calico-cni` 用户账户。
+
+```bash
 kubectl create clusterrolebinding calico-cni --clusterrole=calico-cni --user=calico-cni
 ```
 
+* 安装插件
 
+提示：需要在每个节点上执行下面的安装步骤。
 
-* Install the plugin
+在`cka001`上安装。
 
-Do these steps on **each node** in your cluster.
+以 **root** 用户运行下面的命令。
 
-Installation on `cka001`.
-
-Run these commands as **root**.
-```console
+```bash
 sudo su
 ```
 
-Install the CNI plugin Binaries. 
-Get right release in the link `https://github.com/projectcalico/cni-plugin/releases`, and link `https://github.com/containernetworking/plugins/releases`.
-```console
+安装CNI插件的二进制文件。
+下载包链接：`https://github.com/projectcalico/cni-plugin/releases`和 `https://github.com/containernetworking/plugins/releases`。
+
+```bash
 mkdir -p /opt/cni/bin
 
 curl -L -o /opt/cni/bin/calico https://github.com/projectcalico/cni-plugin/releases/download/v3.20.5/calico-amd64
@@ -295,26 +329,28 @@ chmod 755 /opt/cni/bin/calico
 
 curl -L -o /opt/cni/bin/calico-ipam https://github.com/projectcalico/cni-plugin/releases/download/v3.20.5/calico-ipam-amd64
 chmod 755 /opt/cni/bin/calico-ipam
-```
-```console
+
 wget https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz
 tar xvf cni-plugins-linux-amd64-v1.1.1.tgz -C /opt/cni/bin
 ```
 
-Create the config directory
-```console
+创建配置文件目录。
+
+```bash
 mkdir -p /etc/cni/net.d/
 ```
 
-Copy the kubeconfig from the previous section
-```console
+复制前面生成的kubeconfig到我们创建的配置文件目录`/etc/cni/net.d/`下，改名为`calico-kubeconfig`，并修改其权限。
+
+```bash
 cp /etc/kubernetes/pki/cni.kubeconfig /etc/cni/net.d/calico-kubeconfig
 
 chmod 600 /etc/cni/net.d/calico-kubeconfig
 ```
 
-Write the CNI configuration
-```console
+将下面的内容写入CNI配置文件`/etc/cni/net.d/10-calico.conflist`中。
+
+```bash
 cat > /etc/cni/net.d/10-calico.conflist <<EOF
 {
   "name": "k8s-pod-network",
@@ -344,32 +380,42 @@ cat > /etc/cni/net.d/10-calico.conflist <<EOF
 }
 EOF
 ```
-```console
+
+将/etc/cni/net.d/calico-kubeconfig配置文件复制到当前操作系统用户（`root`）的home路径下。
+
+```bash
 cp /etc/cni/net.d/calico-kubeconfig ~
 ```
 
-Exit from su and go back to the logged in user.
-```console
+退出 `su` 的 root用户，返回常规用户，这里是`vagrant`。
+
+```bash
 exit
 ```
 
+在节点`cka002`上安装。
 
-Installation on `cka002`.
+当前仍然在节点`cka001`，通过sftp命令把生成的证书从节点`cka001`上传至节点`cka002`。
 
-```console
+```bash
 sftp -i cka-key-pair.pem cka002
-```
-```console
+
 put calico-amd64
 put calicoctl-linux-amd64
 put calico-ipam-amd64
 put calico-kubeconfig
 put cni-plugins-linux-amd64-v1.1.1.tgz
 ```
-```console
+
+通过证书从节点`cka001`登录到节点`cka002`。
+
+```bash
 ssh -i cka-key-pair.pem cka002
 ```
-```console
+
+创建目录`/opt/cni/bin`以存放cni二进制文件。
+
+```bash
 mkdir -p /opt/cni/bin
 
 cp calico-amd64 /opt/cni/bin/calico
@@ -383,7 +429,10 @@ cp calico-kubeconfig /etc/cni/net.d/calico-kubeconfig
 
 chmod 600 /etc/cni/net.d/calico-kubeconfig
 ```
-```console
+
+更新CNI配置文件`/etc/cni/net.d/10-calico.conflist`。
+
+```bash
 cat > /etc/cni/net.d/10-calico.conflist <<EOF
 {
   "name": "k8s-pod-network",
@@ -414,18 +463,21 @@ cat > /etc/cni/net.d/10-calico.conflist <<EOF
 EOF
 ```
 
-Back to `cka001`.
-```console
+返回至节点 `cka001`。
+
+```bash
 exit
 ```
 
+在`cka003`上安装。
 
-Installation on `cka003`.
+类似`cka002`的安装过程，从节点`cka001`上传证书到节点`cka003`，并登录到节点`cka003`完成下面的命令。
 
-```console
+```bash
 sftp -i cka-key-pair.pem cka003
 ```
-```console
+
+```bash
 put calico-amd64
 put calicoctl-linux-amd64
 put calico-ipam-amd64
@@ -433,10 +485,11 @@ put calico-kubeconfig
 put cni-plugins-linux-amd64-v1.1.1.tgz
 ```
 
-```console
+```bash
 ssh -i cka-key-pair.pem cka003
 ```
-```console
+
+```bash
 mkdir -p /opt/cni/bin
 
 cp calico-amd64 /opt/cni/bin/calico
@@ -450,7 +503,8 @@ cp calico-kubeconfig /etc/cni/net.d/calico-kubeconfig
 
 chmod 600 /etc/cni/net.d/calico-kubeconfig
 ```
-```console
+
+```bash
 cat > /etc/cni/net.d/10-calico.conflist <<EOF
 {
   "name": "k8s-pod-network",
@@ -481,48 +535,49 @@ cat > /etc/cni/net.d/10-calico.conflist <<EOF
 EOF
 ```
 
-Back to `cka001`.
-```console
+返回至节点`cka001`。
+
+```bash
 exit
 ```
 
-Stay in home directory in node `cka001`.
+当前工作目录仍然是节点`cka001`的home目录。
 
-At this point Kubernetes nodes will become Ready because Kubernetes has a networking provider and configuration installed.
-```console
+至此，此时，Kubernetes 节点将变为 Ready 状态，因为 Kubernetes 已安装了网络提供程序和配置。
+
+```bash
 kubectl get nodes
 ```
-Result
-```
+
+运行结果：
+
+```console
 NAME     STATUS   ROLES                  AGE     VERSION
 cka001   Ready    control-plane,master   4h50m   v1.24.0
 cka002   Ready    <none>                 4h49m   v1.24.0
 cka003   Ready    <none>                 4h49m   v1.24.0
 ```
 
+## 安装Typha
 
+Typha 处于 Kubernetes API 服务器和每个节点守护进程（如运行在 calico/node 中的 Felix 和 confd）之间。
+它监视这些守护进程使用的 Kubernetes 资源和 Calico 自定义资源，每当资源更改时，它会将更新扩散到这些守护进程。
+这减少了 Kubernetes API 服务器需要服务的监视数，提高了集群的可扩展性。
 
+* 准备证书
 
+下面，我们使用相互认证的TLS来确保calico/node和Typha之间的通信安全。
+生成一个证书授权机构（CA）并使用它来为Typha签署证书。
 
+将当前工作目录改为 `/etc/kubernetes/pki/`。
 
-## Install Typha
-
-Typha sits between the Kubernetes API server and per-node daemons like Felix and confd (running in calico/node). 
-It watches the Kubernetes resources and Calico custom resources used by these daemons, and whenever a resource changes it fans out the update to the daemons. 
-This reduces the number of watches the Kubernetes API server needs to serve and improves scalability of the cluster.
-
-* Provision Certificates
-
-We will use mutually authenticated TLS to ensure that calico/node and Typha communicate securely. 
-We generate a certificate authority (CA) and use it to sign a certificate for Typha.
-
-Change to directory `/etc/kubernetes/pki/`.
-```console
+```bash
 cd /etc/kubernetes/pki/
 ```
 
-Create the CA certificate and key
-```console
+创建CA证书和密钥。
+
+```bash
 openssl req -x509 -newkey rsa:4096 \
   -keyout typhaca.key \
   -nodes \
@@ -531,13 +586,15 @@ openssl req -x509 -newkey rsa:4096 \
   -days 365
 ```
 
-Store the CA certificate in a ConfigMap that Typha & calico/node will access.
-```console
+把CA证书存放在ConfigMap中，使Typha和calico/node能够访问。
+
+```bash
 kubectl create configmap -n kube-system calico-typha-ca --from-file=typhaca.crt
 ```
 
-Create the Typha key and certificate signing request (CSR).
-```console
+生成Typha密钥和证书签名请求（certificate signing request，CSR）。
+
+```bash
 openssl req -newkey rsa:4096 \
   -keyout typha.key \
   -nodes \
@@ -545,10 +602,11 @@ openssl req -newkey rsa:4096 \
   -subj "/CN=calico-typha"
 ```
 
-The certificate presents the Common Name (CN) as `calico-typha`. `calico/node` will be configured to verify this name.
+证书的通用名称（CN）设置为 `calico-typha`。`calico/node` 将被用来验证此名称。
 
-Sign the Typha certificate with the CA.
-```console
+使用 CA 对 Typha 证书进行签名。
+
+```bash
 openssl x509 -req -in typha.csr \
   -CA typhaca.crt \
   -CAkey typhaca.key \
@@ -556,32 +614,38 @@ openssl x509 -req -in typha.csr \
   -out typha.crt \
   -days 365
 ```
-```
+
+运行结果：
+
+```console
 Signature ok
 subject=CN = calico-typha
 Getting CA Private Key
 ```
 
-Store the Typha key and certificate in a secret that Typha will access
-```console
+将 Typha 密钥和证书存储在一个 secret 中，以便 Typha 可以访问。
+
+```bash
 kubectl create secret generic -n kube-system calico-typha-certs --from-file=typha.key --from-file=typha.crt
 ```
 
+* 配置RBAC
 
-* Provision RBAC
+当前工作目录为home路径。
 
-Change to home directory.
-```console
+```bash
 cd ~
 ```
 
-Create a ServiceAccount that will be used to run Typha.
-```console
+创建一个Typha使用的ServiceAccount。
+
+```bash
 kubectl create serviceaccount -n kube-system calico-typha
 ```
 
-Define a cluster role for Typha with permission to watch Calico datastore objects.
-```console
+为 Typha 创建一个集群角色，有观察 Calico 数据存储对象的权限。
+
+```bash
 kubectl apply -f - <<EOF
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -638,18 +702,19 @@ rules:
 EOF
 ```
 
-Bind the cluster role to the calico-typha ServiceAccount.
-```console
+将创建的集群角色绑定到`calico-typha`这个ServiceAccount。
+
+```bash
 kubectl create clusterrolebinding calico-typha --clusterrole=calico-typha --serviceaccount=kube-system:calico-typha
 ```
 
+* 安装Deployment
 
+由于 `calico/node` 需要 Typha，而 `calico/node` 负责建立 Pod 网络，所以我们把 Typha 作为主机网络的 Pod 运行，以避免鸡生蛋或蛋生鸡的问题（chicken-and-egg problem）。
 
-* Install Deployment
+我们运行 3 个 Typha 副本，这样即使在滚动更新期间发生单个故障，也不会使 Typha 不可用。
 
-Since Typha is required by `calico/node`, and `calico/node` establishes the pod network, we run Typha as a host networked pod to avoid a chicken-and-egg problem. 
-We run 3 replicas of Typha so that even during a rolling update, a single failure does not make Typha unavailable.
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
@@ -741,32 +806,34 @@ spec:
 EOF
 ```
 
-We set `TYPHA_CLIENTCN` to calico-node which is the common name we will use on the certificate `calico/node` will use late.
+我们设置 `TYPHA_CLIENTCN` 为 `calico-node`，后续将用于 `calico/node` 证书的通用名称。
 
-Verify Typha is up an running with three instances
-```console
+确认 Typha 已经启动并运行了三个实例。
+
+```bash
 kubectl get pods -l k8s-app=calico-typha -n kube-system
 ```
-Result looks like below.
-```
+
+运行结果：
+
+```console
 NAME                           READY   STATUS    RESTARTS   AGE
 calico-typha-5b8669646-b2xnq   1/1     Running   0          20s
 calico-typha-5b8669646-q5glk   0/1     Pending   0          20s
 calico-typha-5b8669646-rvv86   1/1     Running   0          20s
 ```
 
-Here is an error message received:
-```
+遇到如下错误信息。
+
+```console
 0/3 nodes are available: 1 node(s) had taint {node-role.kubernetes.io/master: }, that the pod didn't tolerate, 2 node(s) didn't have free ports for the requested pod ports.
 ```
 
+* 安装Service
 
+`calico/node`使用Kubernetes Service以获得对Typha的负载均衡访问。
 
-
-* Install Service
-
-`calico/node` uses a Kubernetes Service to get load-balanced access to Typha.
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Service
@@ -786,15 +853,16 @@ spec:
 EOF
 ```
 
-Validate that Typha is using TLS.
-```console
+验证Typha正在使用TLS。
+
+```bash
 TYPHA_CLUSTERIP=$(kubectl get svc -n kube-system calico-typha -o jsonpath='{.spec.clusterIP}')
-```
-```console
 curl https://$TYPHA_CLUSTERIP:5473 -v --cacert /etc/kubernetes/pki/typhaca.crt
 ```
-Result
-```
+
+运行结果：
+
+```console
 *   Trying 11.244.91.165:5473...
 * TCP_NODELAY set
 * Connected to 11.244.91.165 (11.244.91.165) port 5473 (#0)
@@ -819,31 +887,28 @@ Result
 curl: (35) error:14094412:SSL routines:ssl3_read_bytes:sslv3 alert bad certificate
 ```
 
-This demonstrates that Typha is presenting its TLS certificate and rejecting our connection because we do not present a certificate. 
-We will later deploy calico/node with a certificate Typha will accept.
+上面的错误信息说明 Typha 正在使用 TLS 证书，且因我们没有提供证书而拒绝连接。
+下面我们会使用一个证书部署 calico/node，这样 Typha 就会接受连接了。
 
+## 安装calico/node
 
+`calico/node` 运行三个守护进程。
 
+* Felix，Calico的每个节点守护进程
+* BIRD，一个守护进程，使用BGP协议与其他节点交换路由信息
+* confd，一个守护进程，监视Calico数据存储中的配置更改，并更新BIRD的配置文件
 
+* 准备证书
 
-## Install calico/node
+切换到目录 `/etc/kubernetes/pki/`。
 
-`calico/node` runs three daemons:
-
-* Felix, the Calico per-node daemon
-* BIRD, a daemon that speaks the BGP protocol to distribute routing information to other nodes
-* confd, a daemon that watches the Calico datastore for config changes and updates BIRD’s config files
-
-
-* Provision Certificates
-
-Change to directory `/etc/kubernetes/pki/`.
-```console
+```bash
 cd /etc/kubernetes/pki/
 ```
 
-Create the key `calico/node` will use to authenticate with Typha and the certificate signing request (CSR)
-```console
+创建 `calico/node` 密钥，用于认证 Typha 和证书签名请求 (certificate signing request，CSR)。
+
+```bash
 openssl req -newkey rsa:4096 \
   -keyout calico-node.key \
   -nodes \
@@ -851,10 +916,11 @@ openssl req -newkey rsa:4096 \
   -subj "/CN=calico-node"
 ```
 
-The certificate presents the Common Name (CN) as `calico-node`, which is what we configured Typha to accept in the last lab.
+这个证书的公共名称 (CN) 是 `calico-node`，这是我们在上一个演示中配置 Typha 接受的名称。
 
-Sign the Felix certificate with the CA we created earlier.
-```console
+使用我们前面创建的 CA 对 Felix 证书进行签名。
+
+```bash
 openssl x509 -req -in calico-node.csr \
   -CA typhaca.crt \
   -CAkey typhaca.key \
@@ -862,32 +928,38 @@ openssl x509 -req -in calico-node.csr \
   -out calico-node.crt \
   -days 365
 ```
-```
+
+运行结果：
+
+```console
 Signature ok
 subject=CN = calico-node
 Getting CA Private Key
 ```
 
-Store the key and certificate in a Secret that calico/node will access.
-```console
+将密钥和证书存储在 calico/node 将要访问的 Secret 中。
+
+```bash
 kubectl create secret generic -n kube-system calico-node-certs --from-file=calico-node.key --from-file=calico-node.crt
 ```
 
+* 准备RBAC
 
-* Provision RBAC
+切换至当前用户的home目录。
 
-Change to home directory.
-```console
+```bash
 cd ~
 ```
 
-Create the ServiceAccount that calico/node will run as.
-```console
+创建一个 `calico/node` 要使用的 ServiceAccount。
+
+```bash
 kubectl create serviceaccount -n kube-system calico-node
 ```
 
-Provision a cluster role with permissions to read and modify Calico datastore objects
-```console
+准备一个集群角色，该角色具有读写Calico数据库对象的权限。
+
+```bash
 kubectl apply -f - <<EOF
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1028,26 +1100,27 @@ rules:
 EOF
 ```
 
-Bind the cluster role to the calico-node ServiceAccount
-```console
+把创建的集群角色绑定到`calico-node`这个ServiceAccount。
+
+```bash
 kubectl create clusterrolebinding calico-node --clusterrole=calico-node --serviceaccount=kube-system:calico-node
 ```
 
+* 安装daemonset
 
+切换至当前用户的home目录。
 
-* Install daemon set
-
-Change to home directory.
-```console
+```bash
 cd ~
 ```
 
-`calico/node` runs as a daemon set so that it is installed on every node in the cluster.
+`calico/node`作为daemonset运行，安装在群集中的每个节点上。
 
-Change `image: calico/node:v3.20.0` to right version. 
+修改`image: calico/node:v3.20.0`为实际安装版本。
 
-Create the daemon set
-```console
+创建daemonset。
+
+```bash
 kubectl apply -f - <<EOF
 kind: DaemonSet
 apiVersion: apps/v1
@@ -1217,44 +1290,53 @@ spec:
 EOF
 ```
 
-Verify that calico/node is running on each node in your cluster, and goes to Running within a few minutes.
-```console
+验证在集群中每个节点上 `calico/node` 是否在运行，安装后，一般在几分钟内会变为 Running 状态。
+
+```bash
 kubectl get pod -l k8s-app=calico-node -n kube-system
 ```
-Result looks like below.
-```
+
+运行结果：
+
+```console
 NAME                READY   STATUS    RESTARTS   AGE
 calico-node-4c4sp   1/1     Running   0          40s
 calico-node-j2z6v   1/1     Running   0          40s
 calico-node-vgm9n   1/1     Running   0          40s
 ```
 
+## 测试网络
 
-## Test networking
+### pod之间的ping
 
-### Pod to pod pings
+创建三个busybox实例。
 
-Create three busybox instances
-```console
+```bash
 kubectl create deployment pingtest --image=busybox --replicas=3 -- sleep infinity
 ```
 
-Check their IP addresses
-```console
+查询他们的IP地址。
+
+```bash
 kubectl get pods --selector=app=pingtest --output=wide
 ```
-Result
-```
+
+运行结果：
+
+```console
 NAME                        READY   STATUS    RESTARTS   AGE   IP             NODE     NOMINATED NODE   READINESS GATES
 pingtest-585b76c894-chwjq   1/1     Running   0          7s    10.244.31.1    cka002   <none>           <none>
 pingtest-585b76c894-s2tbs   1/1     Running   0          7s    10.244.31.0    cka002   <none>           <none>
 pingtest-585b76c894-vm9wn   1/1     Running   0          7s    10.244.28.64   cka003   <none>           <none>
 ```
 
-Note the IP addresses of the second two pods, then exec into the first one. 
-From inside the pod, ping the other two pod IP addresses. 
-For example:
-```console
+留意第二个和第三个 pod 的 IP 地址。
+随后我们会在第一个 pod 中运行 exec 命令。
+在第一个 pod 内部，对另外两个 pod 的 IP 地址进行 ping 测试。
+
+例如：
+
+```bash
 kubectl exec -ti pingtest-585b76c894-chwjq -- sh
 / # ping 10.244.31.1 -c 4
 4 packets transmitted, 4 packets received, 0% packet loss
@@ -1266,31 +1348,35 @@ kubectl exec -ti pingtest-585b76c894-chwjq -- sh
 4 packets transmitted, 0 packets received, 100% packet loss
 ```
 
+### 路由检查
 
-### Check routes
+从其中一个节点验证是否能ping通到每个pod的IP地址。例如：
 
-From one of the nodes, verify that routes exist to each of the pingtest pods’ IP addresses. For example
-```console
+```bash
 ip route get 10.244.31.1
 ip route get 10.244.31.0
 ip route get 10.244.28.64
 ```
-In the result, the `via <cka001_ip>`(it's control-plane) in this example indicates the next-hop for this pod IP, which matches the IP address of the node the pod is scheduled on, as expected.
-IPAM allocations from different pools.
 
-Recall that we created two IP pools, but left one disabled.
-```console
+在上面的结果中，示例中的 `via <cka001_ip>` （它是控制平面）表示此Pod IP的下一跳，这与Pod所在节点的IP地址匹配，符合预期。
+
+不同IP池的IPAM分配。在前面的演示中，我们创建了两个IP池，但将一个禁用了。
+
+```bash
 calicoctl get ippools -o wide
 ```
-Result
-```
+
+运行结果：
+
+```console
 NAME            CIDR              NAT    IPIPMODE   VXLANMODE   DISABLED   DISABLEBGPEXPORT   SELECTOR   
 ipv4-ippool-1   10.244.0.0/18     true   Never      Never       false      false              all()      
 ipv4-ippool-2   10.244.192.0/19   true   Never      Never       true       false              all()   
 ```
 
-Enable the second pool.
-```console
+激活第二个IP池。
+
+```bash
 calicoctl --allow-version-mismatch apply -f - <<EOF
 apiVersion: projectcalico.org/v3
 kind: IPPool
@@ -1305,19 +1391,23 @@ spec:
 EOF
 ```
 
-```console
+查询IP池的状态。
+
+```bash
 calicoctl get ippools -o wide
 ```
-Result
-```
+
+运行结果：
+
+```console
 NAME            CIDR              NAT    IPIPMODE   VXLANMODE   DISABLED   DISABLEBGPEXPORT   SELECTOR   
 ipv4-ippool-1   10.244.0.0/18     true   Never      Never       false      false              all()      
 ipv4-ippool-2   10.244.192.0/19   true   Never      Never       false      false              all()      
 ```
 
+创建一个 Pod，以显式方式请求从 `pool2` 分配一个 IP 地址。
 
-Create a pod, explicitly requesting an address from pool2
-```console
+```bash
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
@@ -1336,32 +1426,35 @@ spec:
 EOF
 ```
 
-Verify it has an IP address from pool2
-```console
+验证pod已经从 `pool2` 分配一个 IP 地址。
+
+```bash
 kubectl get pod pingtest-ippool-2 -o wide
 ```
-Result
-```
+
+运行结果：
+
+```console
 NAME                READY   STATUS    RESTARTS   AGE   IP               NODE     NOMINATED NODE   READINESS GATES
 pingtest-ippool-2   1/1     Running   0          18s   10.244.203.192   cka003   <none>           <none>
 ```
 
-Let's attach to the Pod `pingtest-585b76c894-chwjq` again.
-```console
+连接并进入Pod `pingtest-585b76c894-chwjq`内部。
+
+```bash
 kubectl exec -ti pingtest-585b76c894-chwjq -- sh
 / # 10.244.203.192 -c 4
 4 packets transmitted, 0 packets received, 100% packet loss
 ```
 
-!! Mark here. it's failed. Need further check why the route does not work.
+标记：
+演示止于此，路由没有安装预期工作，原因查找中。
 
-Clean up
-```console
+删除演示中创建的临时资源。
+
+```bash
 kubectl delete deployments.apps pingtest
 kubectl delete pod pingtest-ippool-2
 ```
 
-
-
-!!! Reference
-    [End-to-end Calico installation](https://projectcalico.docs.tigera.io/getting-started/kubernetes/hardway/)
+参考：[End-to-end Calico installation](https://projectcalico.docs.tigera.io/getting-started/kubernetes/hardway/)

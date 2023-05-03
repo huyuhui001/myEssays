@@ -15,10 +15,9 @@
 6. 部署和管理 Kubernetes 集群也是一个重点，我是在阿里云上买了3个ECS作为实验环境。
 
 下面是我学习CKA的笔记。完成这里面的练习，再熟练使用yaml文件和kubectl命令，通过考试没什么困难。
-原始的[英文笔记](https://huyuhui001.github.io/mySite/k8s/)是基于当时参加公司培训的知识结构做的，现在把自己的英语翻译成自己的中文，可能读起来会觉得有点怪，见笑了。
-也附上中文笔记的[md文件](https://github.com/huyuhui001/myEssays/tree/hjmain/cka)给大家参考。
+原始的[英文笔记](https://huyuhui001.github.io/mySite/k8s/)是基于当时参加公司培训的知识结构做的，尽量读起来没那么怪。
 
-（还在持续翻译中........）
+也附上中文笔记的[md文件](https://github.com/huyuhui001/myEssays/tree/hjmain/cka)给大家参考。
 
 安装
 
@@ -51,25 +50,25 @@ Docker
 - [CKA自学笔记15:Configuration]
 - [CKA自学笔记16:secrets]
 - [CKA自学笔记17:Persistence](https://zhuanlan.zhihu.com/p/624313188)
-- Role Based Access Control (RBAC)
-- Ingress
+- [CKA自学笔记18:RBAC鉴权](https://zhuanlan.zhihu.com/p/625880910)
+- [CKA自学笔记19:Ingress-nginx](https://zhuanlan.zhihu.com/p/626303635)
 
 进阶概念
 
-- Scheduling
-- Horizontal Pod Autoscaling
-- Policy
-- Network Policy
-- Cluster Management
+- [CKA自学笔记20:Scheduling](https://zhuanlan.zhihu.com/p/626321291)
+- [CKA自学笔记21:Horizontal Pod Autoscaling (HPA)](https://zhuanlan.zhihu.com/p/626326299)
+- [CKA自学笔记22:Policy](https://zhuanlan.zhihu.com/p/626331282)
+- [CKA自学笔记23:Network Policy](https://zhuanlan.zhihu.com/p/626339983)
+- [CKA自学笔记24:Cluster Management](https://zhuanlan.zhihu.com/p/626348952)
 
 日常维护
 
-- Troubleshooting
-- Health Check
-- Helming
+- [CKA自学笔记25:Troubleshooting](https://zhuanlan.zhihu.com/p/626356382)
+- [CKA自学笔记26:健康检查](https://zhuanlan.zhihu.com/p/626358874)
+- [CKA自学笔记27:Helm Chart](https://zhuanlan.zhihu.com/p/626364545)
 
-案例
+主题讨论
 
-- Operations on Resources
-- Health Check
-- Calico Installation
+- [主题讨论:Kubernetes资源常见操作](https://zhuanlan.zhihu.com/p/626416961)
+- [主题讨论:健康检查](https://zhuanlan.zhihu.com/p/626437189)
+- [主题讨论:安装Calico](https://zhuanlan.zhihu.com/p/626458560)

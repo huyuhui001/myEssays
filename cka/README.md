@@ -70,7 +70,7 @@ Docker
 
 - [Helming](./foundamentals/helming.md)
 
-案例
+主题讨论
 
 - [Operations on Resources](./foundamentals/casestudy-operation-resources.md)
 
